@@ -12,15 +12,31 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Custom scrollbar for beautiful dashboard aesthetics */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
     </style>
 </head>
 <body class="bg-[#F8FAFC] text-[#1E252D] min-h-screen antialiased flex flex-col">
 
     <!-- Seller Admin Indicator Banner (Premium charcoal grey banner with gold trim) -->
     <div id="adminBanner" class="hidden bg-[#1E252D] border-b border-[#FDB813]/40 text-white px-6 py-3.5 text-center text-sm font-semibold relative z-50 shadow-md flex items-center justify-center gap-3">
-        <span class="inline-flex rounded-full h-2 w-2 bg-[#FDB813]"></span>
-        <span class="text-xs md:text-sm text-slate-200">Seller Workspace Active — Customize core milestones and run AI assessments.</span>
-        <button onclick="toggleAdmin(false)" class="bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] rounded-lg px-3 py-1 text-xs transition-all font-bold">
+        <span class="inline-flex rounded-full h-2.5 w-2.5 bg-[#FDB813] animate-pulse"></span>
+        <span class="text-xs md:text-sm text-slate-200">Seller Workspace Active — Customize core milestones and manage client alignment paths.</span>
+        <button onclick="toggleAdmin(false)" class="bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] rounded-lg px-3 py-1 text-xs transition-all font-bold shadow-sm">
             Exit Workspace
         </button>
     </div>
@@ -29,7 +45,7 @@
     <div id="toastContainer" class="fixed top-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
 
     <!-- Joint Evaluation Header (Clean white header matching website with dynamic date pickers) -->
-    <header class="bg-white border-b border-slate-250 py-6 px-6 md:px-12 sticky top-0 z-40 shadow-sm">
+    <header class="bg-white border-b border-slate-200 py-6 px-6 md:px-12 sticky top-0 z-40 shadow-sm">
         <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div>
                 <div class="flex items-center gap-2.5">
@@ -40,16 +56,16 @@
                         Seller Admin Mode
                     </span>
                 </div>
-                <!-- Visual branding header mapping the logo format in image_e6eefc.jpg -->
+                <!-- Visual branding header mapping the logo format in image_f2d006.png -->
                 <div class="flex items-center gap-2.5 mt-3">
                     <span class="text-[#FDB813] font-black text-xl">▶</span>
-                    <h1 class="text-2xl md:text-3xl font-black text-[#1E252D] tracking-tight uppercase">TEXADA MAP</h1>
+                    <h1 class="text-2xl md:text-3xl font-black text-[#1E252D] tracking-tight uppercase">TEXADA EVALUATION PLAN</h1>
                 </div>
                 <p class="text-slate-500 text-sm mt-1">Co-developed timeline mapping for Acme Corp & Partners</p>
             </div>
             
             <!-- Dynamic Pickers shown in header when timeline is active -->
-            <div id="headerDatePickers" class="hidden flex-wrap gap-4 bg-[#F8FAFC] p-4 rounded-2xl border border-slate-200 w-full sm:w-auto">
+            <div id="headerDatePickers" class="hidden flex flex-wrap gap-4 bg-[#F8FAFC] p-4 rounded-2xl border border-slate-200 w-full sm:w-auto">
                 <div class="flex-1 min-w-[140px]">
                     <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Discovery Date</label>
                     <input type="date" id="headerDiscoveryInput" onchange="updateDiscoveryDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] focus:border-transparent w-full">
@@ -67,9 +83,6 @@
         
         <!-- INITIAL EMPTY STATE PANEL -->
         <div id="emptyStatePanel" class="bg-white border border-slate-200 rounded-3xl p-8 md:p-12 text-center space-y-8 shadow-sm">
-            <div class="w-16 h-16 bg-[#FDB813]/10 text-[#FDB813] rounded-2xl flex items-center justify-center mx-auto text-3xl shadow-sm">
-                📅
-            </div>
             <div class="max-w-md mx-auto space-y-2">
                 <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight">Set Plan Baseline Coordinates</h2>
                 <p class="text-sm text-slate-500 leading-relaxed">
@@ -97,6 +110,28 @@
 
         <!-- TIMELINE CONTENTS (Hidden when state is empty) -->
         <div id="timelineWorkspace" class="hidden space-y-8">
+
+            <!-- Real-time Metrics & KPIs Banner -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white border border-slate-200/80 p-5 rounded-3xl shadow-sm">
+                <div class="space-y-1 p-2">
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Launch Countdown</span>
+                    <div class="flex items-baseline gap-1">
+                        <span id="metricCountdown" class="text-xl md:text-2xl font-black text-[#1E252D]">--</span>
+                        <span class="text-xs text-slate-500 font-bold">days</span>
+                    </div>
+                </div>
+                <div class="space-y-1 p-2 border-l-0 sm:border-l border-slate-150">
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Overall Progress</span>
+                    <div class="flex items-center gap-2">
+                        <span id="metricProgress" class="text-xl md:text-2xl font-black text-emerald-600">0%</span>
+                        <span class="text-[10px] text-slate-500 font-semibold id=metricTaskCount inline" id="metricTaskCount">(0/0 done)</span>
+                    </div>
+                </div>
+                <div class="space-y-1 p-2 border-l-0 sm:border-l border-slate-150">
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Feasibility Risk</span>
+                    <span id="metricRisk" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 uppercase tracking-wide">Calculable</span>
+                </div>
+            </div>
             
             <!-- Reality Check Alert -->
             <div id="realityCheckAlert" class="hidden bg-rose-50 border border-rose-200 p-5 rounded-2xl flex items-start gap-4 shadow-sm">
@@ -112,24 +147,34 @@
                 <div class="flex justify-between items-center pb-2 border-b border-slate-100">
                     <div>
                         <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Roadmap Overview</h3>
-                        <p class="text-[11px] text-slate-500">Proportionally scaled chronological bird's-eye view.</p>
+                        <p class="text-[11px] text-slate-500">Proportionally scaled chronological bird's-eye view. Click nodes to jump to details.</p>
+                    </div>
+                    <div class="flex gap-4 text-[10px] font-bold text-slate-400">
+                        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> Completed</span>
+                        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span> In Progress</span>
                     </div>
                 </div>
 
-                <div class="relative py-16 px-6">
-                    <!-- Underlay Track Line (Gold/Yellow track indicator) -->
-                    <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[#FDB813] via-slate-200 to-slate-100 rounded-full"></div>
-                    
-                    <!-- Dynamic "Today" Indicator Line (Clean dark charcoal dashed line with text header badge) -->
-                    <div id="horizontalTodayLine" class="absolute top-0 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none hidden">
-                        <span class="absolute -top-6 left-1/2 -translate-x-1/2 bg-[#1E252D] text-[#FDB813] text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md whitespace-nowrap">
-                            Today
-                        </span>
-                    </div>
-
-                    <!-- Dynamic Node Track -->
-                    <div id="horizontalSummaryTrack" class="relative h-8 w-full">
-                        <!-- Nodes are injected here dynamically -->
+                <!-- Scrollable wrapper resolving the coordinate alignment drift -->
+                <div class="overflow-x-auto w-full">
+                    <div class="relative py-16 px-6 min-w-[650px] min-h-[170px]">
+                        <!-- Underlay Track Line (Gold/Yellow track indicator) -->
+                        <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[#FDB813] via-slate-200 to-slate-100 rounded-full"></div>
+                        
+                        <!-- Dynamic Node Track containing coordinates aligned 1-to-1 with "Today" line -->
+                        <div id="horizontalSummaryTrack" class="absolute inset-x-6 top-0 bottom-0">
+                            <!-- Nodes are injected here dynamically -->
+                            
+                            <!-- Dynamic "Today" Indicator Line with "Today" label styled exactly as shown in image_f2d006.png -->
+                            <!-- Starts at top-8 to protect the absolute absolute pill top coordinate from getting clipped by wrapper overflow-x bounds -->
+                            <div id="horizontalTodayLine" class="absolute top-8 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none hidden transition-all duration-350">
+                                <!-- Capsule button wrapper with tiny live amber badge at top of the bar -->
+                                <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1E252D] text-[#FDB813] text-[10px] font-black tracking-widest uppercase px-3.5 py-1.5 rounded-full shadow-lg whitespace-nowrap flex items-center gap-1.5 border border-[#FDB813]/20">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-[#FDB813] animate-pulse"></span>
+                                    Today
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -159,97 +204,6 @@
                 </div>
             </div>
 
-            <!-- AI Sales Copilot Command Center (Admin Only - Positioned below Map) -->
-            <div id="aiCopilotPanel" class="hidden w-full space-y-6">
-                <div class="bg-white text-[#1E252D] p-6 md:p-8 rounded-3xl border border-slate-200 shadow-xl space-y-6">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="bg-[#1E252D] text-[#FDB813] text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full">AI Agent</span>
-                            <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-                        </div>
-                        <h3 class="text-lg font-bold mt-2 tracking-tight text-[#1E252D]">Gemini Sales Copilot</h3>
-                        <p class="text-slate-500 text-xs mt-1">Accelerate alignment using tailored context modeling and risk tracking.</p>
-                    </div>
-
-                    <!-- Tab Controls -->
-                    <div class="flex border-b border-slate-200 text-xs md:text-sm font-semibold">
-                        <button id="tabSuggestBtn" onclick="switchCopilotTab('suggest')" class="flex-1 pb-3 text-center border-b-2 border-[#FDB813] text-[#1E252D] transition-all">
-                            Milestone Suggester
-                        </button>
-                        <button id="tabEmailBtn" onclick="switchCopilotTab('email')" class="flex-1 pb-3 text-center border-b-2 border-transparent text-slate-400 hover:text-[#1E252D] transition-all">
-                            Urgency Draft
-                        </button>
-                        <button id="tabRiskBtn" onclick="switchCopilotTab('risk')" class="flex-1 pb-3 text-center border-b-2 border-transparent text-slate-400 hover:text-[#1E252D] transition-all">
-                            Risk Check
-                        </button>
-                    </div>
-
-                    <!-- Suggestion Tab Work area -->
-                    <div id="copilotSuggestContent" class="space-y-4">
-                        <p class="text-slate-500 text-xs">Generate custom compliance or technical milestones mapped precisely to your timeline coordinates.</p>
-                        <div>
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Deal Context / Project Constraints</label>
-                            <textarea id="dealContextInput" rows="2" class="w-full bg-slate-50 border border-slate-300 text-[#1E252D] placeholder-slate-400 rounded-xl p-3 text-xs focus:ring-2 focus:ring-[#FDB813] focus:outline-none" placeholder="e.g., Heavy equipment rental tracking rollout requiring GPS integration and bulk API syncing."></textarea>
-                        </div>
-
-                        <!-- Presets -->
-                        <div class="flex flex-wrap gap-1.5">
-                            <button onclick="setContextPreset('Construction equipment integration, custom API telematics sync, and backend load testing')" class="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[10px] px-2.5 py-1.5 rounded-lg text-slate-600 font-medium">🚜 Telematics & Heavy Fleet</button>
-                            <button onclick="setContextPreset('FinTech compliance check, automated SOC2 verification, and data encryption architecture review')" class="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[10px] px-2.5 py-1.5 rounded-lg text-slate-600 font-medium">🔒 SOC2 / Fleet Payments</button>
-                            <button onclick="setContextPreset('SSO authentication setup, custom API architecture design, and load testing review')" class="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[10px] px-2.5 py-1.5 rounded-lg text-slate-600 font-medium">🔑 IT Security / Auth</button>
-                        </div>
-
-                        <button onclick="generateAIMilestones()" id="aiSuggestGenerateBtn" class="w-full bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] font-extrabold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-md transition-all">
-                            ✨ Ask Gemini for Milestone Recommendations
-                        </button>
-
-                        <!-- Suggestions Render Grid -->
-                        <div id="aiSuggestionsOutput" class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2"></div>
-                    </div>
-
-                    <!-- Urgency Email Tab Work area -->
-                    <div id="copilotEmailContent" class="hidden space-y-4">
-                        <p class="text-slate-500 text-xs">Compile a high-conversion alignment email for your internal champion outlining critical milestone deadlines.</p>
-                        
-                        <button onclick="generateAIUrgencyEmail()" id="aiEmailGenerateBtn" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-300 transition-all">
-                            ✉️ Draft Partnership Alignment Email
-                        </button>
-
-                        <div id="aiEmailOutputContainer" class="hidden space-y-3">
-                            <div class="flex justify-between items-center text-xs text-slate-500">
-                                <span>Draft Copy</span>
-                                <button onclick="copyToClipboard('aiEmailOutputText')" class="text-brand-700 hover:text-[#E09F00] font-bold">Copy to Clipboard</button>
-                            </div>
-                            <div id="aiEmailOutputText" class="bg-slate-50 text-[#1E252D] p-4 rounded-xl text-xs border border-slate-300 max-h-60 overflow-y-auto whitespace-pre-wrap font-sans leading-relaxed font-normal"></div>
-                        </div>
-                    </div>
-
-                    <!-- Risk Assessor Tab Work area -->
-                    <div id="copilotRiskContent" class="hidden space-y-4">
-                        <p class="text-slate-500 text-xs">Verify timing feasibility, identifying structural delays or compressed deadlines.</p>
-
-                        <button onclick="generateAIRiskAssessment()" id="aiRiskGenerateBtn" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-300 transition-all">
-                            🛡️ Audit Spacing Feasibility
-                        </button>
-
-                        <div id="aiRiskOutputContainer" class="hidden space-y-4">
-                            <div class="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-xl p-4">
-                                <div>
-                                    <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider">Feasibility Score</span>
-                                    <h4 class="text-md font-bold mt-0.5 text-[#1E252D]" id="aiRiskLevel">Analyzing Spacing...</h4>
-                                </div>
-                                <div class="h-12 w-12 rounded-full border-4 border-[#FDB813] flex items-center justify-center font-black text-sm text-[#FDB813]" id="aiRiskScore">--</div>
-                            </div>
-
-                            <div class="space-y-2">
-                                <span class="text-slate-500 text-[10px] uppercase font-bold tracking-wider block">Identified Timeline Constraints</span>
-                                <ul class="text-slate-700 text-xs space-y-1.5 list-disc list-inside bg-slate-50 p-3 rounded-xl border border-slate-200" id="aiRiskList"></ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </main>
 
@@ -263,7 +217,7 @@
         <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl border border-slate-200 space-y-4">
             <div class="flex justify-between items-center">
                 <h3 id="modalTitle" class="text-base font-bold text-[#1E252D]">Add Custom Milestone</h3>
-                <button onclick="closeMilestoneModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+                <button onclick="closeMilestoneModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
             </div>
             
             <input type="hidden" id="modalId">
@@ -284,6 +238,15 @@
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Owner Assignment</label>
                     <input type="text" id="modalOwner" placeholder="e.g., Acme Security / Seller Lead" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Initial Status</label>
+                    <select id="modalStatus" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Blocked">Blocked</option>
+                    </select>
+                </div>
             </div>
             
             <div class="pt-2 flex justify-end gap-3">
@@ -296,7 +259,7 @@
     <!-- Floating Action Trigger: Toggle Admin Mode -->
     <button onclick="toggleAdmin(null)" class="fixed bottom-6 right-6 bg-[#1E252D] hover:bg-slate-800 text-white p-3.5 rounded-full shadow-xl transition-all duration-300 z-50 border border-[#FDB813]/25 flex items-center gap-2 text-xs font-bold group" title="Toggle Seller Workspace">
         <span class="text-[#FDB813] group-hover:rotate-45 duration-300 transform inline-block">⚙️</span>
-        <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-350 ease-in-out whitespace-nowrap">Seller Workspace</span>
+        <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-350 ease-in-out whitespace-nowrap">Seller Workspace Toggle</span>
     </button>
 
     <!-- Interactive Engine Scripts -->
@@ -306,10 +269,16 @@
             discoveryDate: "", // Always starts empty on fresh load
             customMilestones: [],
             anchorOverrides: {}, // Stores customized title and owners for core milestones
+            anchorStatuses: {
+                'anchor-discovery': 'Completed', // Discovery typically completed at start of workspace creation
+                'anchor-signature': 'Pending',
+                'anchor-kickoff': 'Pending',
+                'anchor-golive': 'Pending'
+            },
             isAdmin: false
         };
 
-        // Date reference for 2026 execution
+        // Date reference for 2026 execution matching screenshot specs
         const CURRENT_DATE_STR = "2026-07-16";
 
         // Load state but enforce true empty parameters on first build
@@ -318,11 +287,25 @@
             if (savedState) {
                 state = JSON.parse(savedState);
                 if (!state.anchorOverrides) state.anchorOverrides = {};
+                if (!state.anchorStatuses) {
+                    state.anchorStatuses = {
+                        'anchor-discovery': 'Completed',
+                        'anchor-signature': 'Pending',
+                        'anchor-kickoff': 'Pending',
+                        'anchor-golive': 'Pending'
+                    };
+                }
             } else {
                 state.goLiveDate = "";
                 state.discoveryDate = "";
                 state.customMilestones = [];
                 state.anchorOverrides = {};
+                state.anchorStatuses = {
+                    'anchor-discovery': 'Completed',
+                    'anchor-signature': 'Pending',
+                    'anchor-kickoff': 'Pending',
+                    'anchor-golive': 'Pending'
+                };
             }
 
             // Read query params for Admin activation
@@ -364,16 +347,17 @@
             return date.toLocaleDateString('en-US', options);
         }
 
+        // Custom Toast center (Replaces annoying browser alerts)
         function showToast(message, type = "success") {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
             
             let bgClass = "bg-[#1E252D] border-slate-800 text-white shadow-xl";
-            if (type === "success") bgClass = "bg-emerald-950/85 border-emerald-850 text-white shadow-emerald-950/20";
-            if (type === "error") bgClass = "bg-rose-950/85 border-rose-850 text-white shadow-rose-950/20";
-            if (type === "info") bgClass = "bg-[#1E252D] border-[#FDB813]/20 text-white shadow-sky-950/20";
+            if (type === "success") bgClass = "bg-emerald-900 border-emerald-800 text-white shadow-emerald-950/20";
+            if (type === "error") bgClass = "bg-rose-900 border-rose-850 text-white shadow-rose-950/20";
+            if (type === "info") bgClass = "bg-slate-900 border-[#FDB813]/25 text-white shadow-sky-950/20";
 
-            toast.className = `${bgClass} border p-4 rounded-xl shadow-lg text-sm flex justify-between items-center transition-all duration-300 w-full`;
+            toast.className = `${bgClass} border p-4 rounded-xl shadow-lg text-sm flex justify-between items-center transition-all duration-300 w-full transform translate-y-2 opacity-0`;
             toast.innerHTML = `
                 <div class="flex items-center gap-2">
                     <span class="font-medium">${message}</span>
@@ -399,19 +383,16 @@
             const banner = document.getElementById('adminBanner');
             const badge = document.getElementById('adminBadge');
             const addBtn = document.getElementById('addMilestoneBtn');
-            const copilotPanel = document.getElementById('aiCopilotPanel');
             
             if (state.isAdmin) {
                 banner.classList.remove('hidden');
                 badge.classList.remove('hidden');
                 addBtn.classList.remove('hidden');
-                copilotPanel.classList.remove('hidden');
                 showToast("Admin Controls Unlocked", "info");
             } else {
                 banner.classList.add('hidden');
                 badge.classList.add('hidden');
                 addBtn.classList.add('hidden');
-                copilotPanel.classList.add('hidden');
                 showToast("Read-Only Client Mode Active", "success");
             }
             renderTimeline();
@@ -452,6 +433,22 @@
             showToast("Target launch date recalculated.", "success");
         }
 
+        // Individual interactive status changes on milestones directly in workspace
+        function updateMilestoneStatus(id, newStatus) {
+            const isAnchor = id.startsWith('anchor-');
+            if (isAnchor) {
+                state.anchorStatuses[id] = newStatus;
+            } else {
+                const idx = state.customMilestones.findIndex(m => m.id === id);
+                if (idx !== -1) {
+                    state.customMilestones[idx].status = newStatus;
+                }
+            }
+            saveState();
+            renderTimeline();
+            showToast(`Status updated to "${newStatus}"`, "success");
+        }
+
         // Main Chronological Timeline Mapping Logic
         function renderTimeline() {
             const emptyState = document.getElementById('emptyStatePanel');
@@ -480,19 +477,42 @@
             const signature = getOffsetDate(kickOff, -35); 
             const discovery = state.discoveryDate;
 
+            // Compute Timeline Spacing Metrics for dashboard HUD
+            const goLiveDateObj = new Date(goLive + "T00:00:00");
+            const today = new Date(CURRENT_DATE_STR + "T00:00:00");
+            const diffToGoLive = Math.ceil((goLiveDateObj - today) / (1000 * 60 * 60 * 24));
+            document.getElementById('metricCountdown').innerText = diffToGoLive > 0 ? diffToGoLive : "0";
+
             // Reality Check Warning Trigger
             const signatureDateObj = new Date(signature + "T00:00:00");
-            const today = new Date(CURRENT_DATE_STR + "T00:00:00");
             const alertContainer = document.getElementById('realityCheckAlert');
             const alertMsg = document.getElementById('realityCheckMessage');
 
+            let riskRating = "SAFE";
             if (signatureDateObj < today) {
+                riskRating = "CRITICAL";
                 const diffTime = Math.abs(today - signatureDateObj);
                 const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
                 alertMsg.innerHTML = `To achieve your requested Launch Target on <strong>${formatReadableDate(goLive)}</strong>, contract finalization needed to occur <strong>${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago</strong> (${formatReadableDate(signature)}). We recommend shifting the target date to ensure standard SLA delivery windows remain intact.`;
                 alertContainer.classList.remove('hidden');
             } else {
                 alertContainer.classList.add('hidden');
+                // Check if tight spacing exists
+                const diffSignatureDiscovery = Math.ceil((signatureDateObj - new Date(discovery + "T00:00:00")) / (1000 * 60 * 60 * 24));
+                if (diffSignatureDiscovery < 30) {
+                    riskRating = "COMPRESSED";
+                }
+            }
+
+            // Update KPI Dashboard Risk Pill
+            const riskPill = document.getElementById('metricRisk');
+            riskPill.innerText = riskRating;
+            if (riskRating === "CRITICAL") {
+                riskPill.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 uppercase tracking-wide";
+            } else if (riskRating === "COMPRESSED") {
+                riskPill.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 uppercase tracking-wide";
+            } else {
+                riskPill.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase tracking-wide";
             }
 
             // Build standard anchors with potential custom overrides
@@ -504,6 +524,7 @@
                     owner: state.anchorOverrides['anchor-discovery']?.owner || 'Acme Champion & Seller Team',
                     isAnchor: true,
                     type: 'discovery',
+                    status: state.anchorStatuses['anchor-discovery'] || 'Completed',
                     icon: `<svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>`,
                     colorTheme: 'from-white to-white border-slate-200 text-[#1E252D] border-l-4 border-l-slate-400',
                     indicatorColor: 'bg-slate-400 ring-slate-100',
@@ -516,6 +537,7 @@
                     owner: state.anchorOverrides['anchor-signature']?.owner || 'Legal & Executive Sponsors',
                     isAnchor: true,
                     type: 'contract',
+                    status: state.anchorStatuses['anchor-signature'] || 'Pending',
                     icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`,
                     colorTheme: 'from-white to-white border-slate-200 text-[#1E252D] border-l-4 border-l-[#FDB813]',
                     indicatorColor: 'bg-[#FDB813] ring-yellow-100',
@@ -528,6 +550,7 @@
                     owner: state.anchorOverrides['anchor-kickoff']?.owner || 'Implementation Leads',
                     isAnchor: true,
                     type: 'kickoff',
+                    status: state.anchorStatuses['anchor-kickoff'] || 'Pending',
                     icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`,
                     colorTheme: 'from-white to-white border-slate-200 text-[#1E252D] border-l-4 border-l-[#1E252D]',
                     indicatorColor: 'bg-[#1E252D] ring-slate-200',
@@ -540,6 +563,7 @@
                     owner: state.anchorOverrides['anchor-golive']?.owner || 'Executive Champions & All Users',
                     isAnchor: true,
                     type: 'golive',
+                    status: state.anchorStatuses['anchor-golive'] || 'Pending',
                     icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`,
                     colorTheme: 'from-white to-white border-[#FDB813] text-[#1E252D] border-l-4 border-l-[#FDB813] font-bold',
                     indicatorColor: 'bg-[#FDB813] ring-yellow-200',
@@ -556,6 +580,7 @@
                     date: m.date,
                     owner: m.owner,
                     isAnchor: false,
+                    status: m.status || 'Pending',
                     colorTheme: 'from-white to-white border-slate-200 text-[#1E252D] border-l-4 border-l-slate-300',
                     indicatorColor: 'bg-slate-400 ring-slate-100',
                     icon: `<svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>`,
@@ -566,19 +591,33 @@
             // Chronological Sorting of Timeline Entries
             allMilestones.sort((a, b) => new Date(a.date + "T00:00:00") - new Date(b.date + "T00:00:00"));
 
+            // Compute Progress Metrics (Task Count & Completed % for HUD dashboard)
+            const completedCount = allMilestones.filter(m => m.status === 'Completed').length;
+            const totalTasks = allMilestones.length;
+            const progressPercentage = Math.round((completedCount / totalTasks) * 100);
+
+            document.getElementById('metricProgress').innerText = `${progressPercentage}%`;
+            document.getElementById('metricTaskCount').innerText = `(${completedCount}/${totalTasks} done)`;
+
             const milestoneTimes = allMilestones.map(m => new Date(m.date + "T00:00:00").getTime());
             const minTime = Math.min(...milestoneTimes);
             const maxTime = Math.max(...milestoneTimes);
             const totalDuration = maxTime - minTime;
 
             const horizontalTrack = document.getElementById('horizontalSummaryTrack');
+            
+            // Clean up old nodes leaving only Today tracker block in container
+            const existingTodayLine = document.getElementById('horizontalTodayLine');
             horizontalTrack.innerHTML = '';
+            horizontalTrack.appendChild(existingTodayLine);
 
             const todayTime = new Date(CURRENT_DATE_STR + "T00:00:00").getTime();
             const hTodayLine = document.getElementById('horizontalTodayLine');
 
+            // Positioning "Today" line relative to scroll coordinates for pristine image_f2d006.png visual matches
             if (todayTime >= minTime && todayTime <= maxTime && totalDuration > 0) {
-                const todayPct = ((todayTime - minTime) / totalDuration) * 90 + 5;
+                // Ensure alignment matching the proportional node scaling algorithm precisely (* 88 + 6 offset bounds)
+                const todayPct = ((todayTime - minTime) / totalDuration) * 88 + 6;
                 hTodayLine.style.left = `${todayPct}%`;
                 hTodayLine.classList.remove('hidden');
             } else {
@@ -616,29 +655,44 @@
                 iterations++;
             }
 
-            // Render Horizontal alternating nodes (Standardized with a clean white-fill border ring setup)
+            // Render Horizontal alternating nodes (Standardized with visual feedback color coding)
             positions.forEach((pos, idx) => {
                 const m = pos.milestone;
                 const percentage = pos.pct;
 
-                let summaryColor = "border-slate-350 bg-white text-slate-600";
-                if (m.type === 'discovery') summaryColor = "border-slate-400 bg-white text-slate-700";
-                if (m.type === 'contract') summaryColor = "border-[#FDB813] bg-white text-slate-700";
-                if (m.type === 'kickoff') summaryColor = "border-[#1E252D] bg-white text-slate-700";
-                if (m.type === 'golive') summaryColor = "border-[#FDB813] bg-[#FDB813] text-[#1E252D] font-extrabold";
+                let statusBorderColor = "border-slate-350 bg-white";
+                let statusBadgeDot = "★";
+                
+                // Color node based on state status
+                if (m.status === 'Completed') {
+                    statusBorderColor = "border-emerald-500 bg-emerald-50 text-emerald-600 font-extrabold ring-4 ring-emerald-100";
+                    statusBadgeDot = "✓";
+                } else if (m.status === 'In Progress') {
+                    statusBorderColor = "border-amber-500 bg-amber-50 text-amber-700 animate-pulse ring-4 ring-amber-100";
+                    statusBadgeDot = "●";
+                } else if (m.status === 'Blocked') {
+                    statusBorderColor = "border-rose-500 bg-rose-50 text-rose-700 font-extrabold";
+                    statusBadgeDot = "!";
+                } else {
+                    if (m.type === 'golive') {
+                        statusBorderColor = "border-[#FDB813] bg-[#FDB813] text-[#1E252D] font-extrabold";
+                    } else if (m.type === 'kickoff') {
+                        statusBorderColor = "border-[#1E252D] bg-slate-50 text-[#1E252D]";
+                    }
+                }
 
                 const isEven = idx % 2 === 0;
                 const summaryNode = document.createElement('div');
-                summaryNode.className = "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group cursor-pointer transition-transform hover:scale-105 z-20";
+                summaryNode.className = "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group cursor-pointer transition-transform hover:scale-110 z-20";
                 summaryNode.style.left = `${percentage}%`;
                 
                 summaryNode.onclick = () => {
                     const detailedElement = document.getElementById(`detailed-${m.id}`);
                     if (detailedElement) {
                         detailedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        detailedElement.classList.add('ring-2', 'ring-[#FDB813]', 'scale-102');
+                        detailedElement.classList.add('ring-4', 'ring-[#FDB813]', 'scale-102');
                         setTimeout(() => {
-                            detailedElement.classList.remove('ring-2', 'ring-[#FDB813]', 'scale-102');
+                            detailedElement.classList.remove('ring-4', 'ring-[#FDB813]', 'scale-102');
                         }, 2000);
                     }
                 };
@@ -648,19 +702,19 @@
                         <div class="absolute bottom-6 flex flex-col items-center text-center whitespace-nowrap z-30">
                             <span class="text-[10px] font-bold text-slate-800 truncate max-w-[75px] md:max-w-[100px] block" title="${m.title}">${m.shortName}</span>
                             <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
-                            <div class="w-px h-1.5 bg-slate-400 mt-1"></div>
+                            <div class="w-px h-1.5 bg-slate-450 mt-1"></div>
                         </div>
-                        <div class="w-6 h-6 rounded-full border-2 ${summaryColor} flex items-center justify-center text-[9px] shadow-sm relative z-20">
-                            ${m.isAnchor ? '★' : '●'}
+                        <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20 transition-all">
+                            ${statusBadgeDot}
                         </div>
                     `;
                 } else {
                     summaryNode.innerHTML = `
-                        <div class="w-6 h-6 rounded-full border-2 ${summaryColor} flex items-center justify-center text-[9px] shadow-sm relative z-20">
-                            ${m.isAnchor ? '★' : '●'}
+                        <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20 transition-all">
+                            ${statusBadgeDot}
                         </div>
                         <div class="absolute top-6 flex flex-col items-center text-center whitespace-nowrap z-30">
-                            <div class="w-px h-1.5 bg-slate-400 mb-1"></div>
+                            <div class="w-px h-1.5 bg-slate-450 mb-1"></div>
                             <span class="text-[10px] font-bold text-slate-800 truncate max-w-[75px] md:max-w-[100px] block" title="${m.title}">${m.shortName}</span>
                             <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
                         </div>
@@ -677,23 +731,6 @@
 
             allMilestones.forEach((m, index) => {
                 const milestoneDateObj = new Date(m.date + "T00:00:00");
-                const discoveryDateObj = new Date(discovery + "T00:00:00");
-                const signatureDateObj = new Date(signature + "T00:00:00");
-                const kickOffDateObj = new Date(kickOff + "T00:00:00");
-
-                // Dynamic phase tagging
-                let phaseTag = "";
-                let phaseStyle = "";
-                if (milestoneDateObj <= signatureDateObj) {
-                    phaseTag = "Phase I: Evaluation";
-                    phaseStyle = "bg-slate-100 text-slate-800 border-slate-200";
-                } else if (milestoneDateObj > signatureDateObj && milestoneDateObj <= kickOffDateObj) {
-                    phaseTag = "Phase II: Onboarding Queue";
-                    phaseStyle = "bg-[#FDB813]/10 text-[#E09F00] border-[#FDB813]/25";
-                } else {
-                    phaseTag = "Phase III: Onboarding Build";
-                    phaseStyle = "bg-[#FDB813]/25 text-[#E09F00] border-[#FDB813]/30";
-                }
 
                 // Inject vertical "YOU ARE HERE" banner chronologically
                 if (!todayBannerInserted) {
@@ -711,50 +748,74 @@
                 const card = document.createElement('div');
                 card.id = `detailed-${m.id}`;
                 
-                let hoverClasses = "";
-                if (state.isAdmin) {
-                    hoverClasses = " cursor-pointer border-dashed border-slate-300 hover:border-[#FDB813] shadow-md";
+                // Set high-fidelity background states based on Milestone Status values
+                let backgroundStyle = m.colorTheme;
+                if (m.status === 'Completed') {
+                    backgroundStyle = "from-emerald-50/70 to-white border-emerald-300 text-[#1E252D] border-l-4 border-l-emerald-500 shadow-sm";
+                } else if (m.status === 'In Progress') {
+                    backgroundStyle = "from-amber-50/70 to-white border-amber-300 text-[#1E252D] border-l-4 border-l-amber-500 shadow-md ring-1 ring-amber-100";
+                } else if (m.status === 'Blocked') {
+                    backgroundStyle = "from-rose-50/70 to-white border-rose-300 text-[#1E252D] border-l-4 border-l-rose-500 shadow-sm";
                 }
-                card.className = "ml-12 relative flex flex-col md:flex-row md:justify-between md:items-center bg-gradient-to-r " + m.colorTheme + " border p-4 rounded-xl gap-4 hover:border-slate-350 transition-all duration-200" + hoverClasses;
+
+                let hoverClasses = " hover:border-slate-350 transition-all duration-200 shadow-sm";
+                if (state.isAdmin) {
+                    hoverClasses = " cursor-pointer border-dashed border-slate-300 hover:border-[#FDB813] shadow-md transition-all";
+                }
+                card.className = "ml-12 relative flex flex-col md:flex-row md:justify-between md:items-center bg-gradient-to-r " + backgroundStyle + " border p-5 rounded-2xl gap-4" + hoverClasses;
+
+                // Configure Dynamic Indicator Badge Colors based on status values
+                let nodeColorClass = m.indicatorColor;
+                if (m.status === 'Completed') nodeColorClass = "bg-emerald-500 ring-emerald-100";
+                if (m.status === 'In Progress') nodeColorClass = "bg-amber-500 ring-amber-100";
+                if (m.status === 'Blocked') nodeColorClass = "bg-rose-500 ring-rose-100";
 
                 card.innerHTML = `
-                    <span class="absolute -left-[32px] md:-left-[36px] top-1/2 transform -translate-y-1/2 flex h-5.5 w-5.5 rounded-full ${m.indicatorColor} ring-4 ring-[#F8FAFC] items-center justify-center z-10">
-                        ${m.isAnchor ? '<span class="h-1.5 w-1.5 bg-white rounded-full"></span>' : ''}
+                    <span class="absolute -left-[32px] md:-left-[36px] top-1/2 transform -translate-y-1/2 flex h-6 w-6 rounded-full ${nodeColorClass} ring-4 ring-[#F8FAFC] items-center justify-center z-10 shadow-sm transition-colors duration-300">
+                        ${m.status === 'Completed' ? '✓' : (m.isAnchor ? '<span class="h-1.5 w-1.5 bg-white rounded-full"></span>' : '')}
                     </span>
 
                     <div class="flex items-start gap-3.5">
-                        <div class="p-2 bg-white rounded-lg border border-slate-200 flex-shrink-0">
+                        <div class="p-2.5 bg-white rounded-xl border border-slate-200 flex-shrink-0 shadow-sm">
                             ${m.icon}
                         </div>
                         <div class="space-y-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <h4 class="text-sm font-bold tracking-tight text-[#1E252D]">${m.title}</h4>
-                                <span class="${phaseStyle} text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md border">
-                                    ${phaseTag}
+                                <span class="text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md border ${m.status === 'Completed' ? 'bg-emerald-100/60 border-emerald-350 text-emerald-800' : (m.status === 'In Progress' ? 'bg-amber-100/60 border-amber-350 text-amber-800' : (m.status === 'Blocked' ? 'bg-rose-100/60 border-rose-350 text-rose-800' : 'bg-slate-100 border-slate-250 text-slate-700'))}">
+                                    ${m.status}
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-500">Owner: <span class="font-semibold text-slate-700">${m.owner}</span></p>
+                            <p class="text-xs text-slate-500">Responsible: <span class="font-semibold text-slate-700">${m.owner}</span></p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-3.5 justify-between md:justify-end border-t md:border-t-0 border-slate-200 pt-3 md:pt-0">
+                    <div class="flex items-center gap-3 justify-between md:justify-end border-t md:border-t-0 border-slate-200 pt-3 md:pt-0">
                         <span class="text-xs font-extrabold text-[#1E252D] bg-white py-1 px-3 rounded-lg border border-slate-200 shadow-sm">
-                            📅 ${formatReadableDate(m.date)}
+                            ${formatReadableDate(m.date)}
                         </span>
 
-                        <!-- EXPLICIT EDIT BUTTON BLOCK - ALWAYS RENDERS IN ADMIN VIEW -->
-                        ${state.isAdmin ? `
-                            <div class="flex items-center gap-2 border-l pl-3 border-slate-200">
-                                <button onclick="editMilestone('${m.id}')" class="text-xs bg-white hover:bg-[#FDB813] hover:text-[#1E252D] text-[#1E252D] border border-slate-350 hover:border-[#FDB813] px-3 py-1.5 rounded-lg font-bold shadow-sm transition-all flex items-center gap-1">
-                                    ✏️ Edit
-                                </button>
-                                ${!m.isAnchor ? `
-                                    <button onclick="deleteMilestone('${m.id}')" class="text-xs bg-slate-50 hover:bg-rose-50 hover:text-rose-700 text-slate-500 border border-slate-200 hover:border-rose-300 px-3 py-1.5 rounded-lg font-bold shadow-sm transition-all">
-                                        Delete
+                        <div class="flex items-center gap-1.5">
+                            <select onchange="updateMilestoneStatus('${m.id}', this.value)" class="text-[10px] bg-white hover:bg-slate-50 text-[#1E252D] border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#FDB813] font-bold cursor-pointer shadow-sm">
+                                <option value="Pending" ${m.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="In Progress" ${m.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Completed" ${m.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                <option value="Blocked" ${m.status === 'Blocked' ? 'selected' : ''}>Blocked</option>
+                            </select>
+
+                            ${state.isAdmin ? `
+                                <div class="flex items-center gap-1 border-l pl-2 border-slate-200">
+                                    <button onclick="editMilestone('${m.id}')" class="text-[10px] bg-white hover:bg-[#FDB813] hover:text-[#1E252D] text-[#1E252D] border border-slate-350 hover:border-[#FDB813] px-2 py-1 rounded-lg font-extrabold shadow-sm transition-all">
+                                        Edit
                                     </button>
-                                ` : ''}
-                            </div>
-                        ` : ''}
+                                    ${!m.isAnchor ? `
+                                        <button onclick="deleteMilestone('${m.id}')" class="text-[10px] bg-slate-50 hover:bg-rose-50 hover:text-rose-700 text-slate-500 border border-slate-200 hover:border-rose-300 px-2 py-1 rounded-lg font-bold shadow-sm transition-all">
+                                            Del
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
                 `;
 
@@ -762,13 +823,12 @@
             });
         }
 
-        // Insert high-visibility vertical "You Are Here" spacer banner with completely static layout metrics
         function insertVerticalTodayBanner(container) {
             const separator = document.createElement('div');
             separator.className = "ml-12 relative flex items-center justify-between bg-[#1E252D] text-white p-3.5 rounded-xl border-l-4 border-[#FDB813] shadow-md";
             separator.innerHTML = `
                 <div class="flex items-center gap-2">
-                    <span class="text-[#FDB813] text-md">📍</span>
+                    <span class="text-[#FDB813] text-md animate-bounce">📍</span>
                     <span class="text-xs font-black uppercase tracking-widest text-[#FDB813]">YOU ARE HERE</span>
                 </div>
                 <span class="text-xs font-extrabold px-2.5 py-0.5 bg-slate-800 rounded-md text-[#FDB813] border border-slate-700">
@@ -786,6 +846,7 @@
             document.getElementById('modalDate').disabled = false;
             document.getElementById('dateLockBadge').classList.add('hidden');
             document.getElementById('modalOwner').value = '';
+            document.getElementById('modalStatus').value = 'Pending';
             document.getElementById('milestoneModal').classList.remove('hidden');
         }
 
@@ -802,11 +863,9 @@
         function editMilestone(id) {
             if (!state.isAdmin) return;
 
-            // Determine if it is a core anchor milestone
             const isAnchor = id.startsWith('anchor-');
             
             if (isAnchor) {
-                // Core anchor attributes setup
                 const goLive = state.goLiveDate;
                 const kickOff = getOffsetMonths(goLive, -4); 
                 const signature = getOffsetDate(kickOff, -35); 
@@ -834,18 +893,17 @@
                     defaultOwner = "Executive Champions & All Users";
                 }
 
-                // Prefill override variables or fallback to core system values
                 const currentOverride = state.anchorOverrides[id] || {};
                 
                 document.getElementById('modalTitle').innerText = "Edit Core Anchor Milestone";
                 document.getElementById('modalId').value = id;
                 document.getElementById('modalName').value = currentOverride.title || defaultTitle;
                 document.getElementById('modalDate').value = dateVal;
-                document.getElementById('modalDate').disabled = true; // Protect formula engine
+                document.getElementById('modalDate').disabled = true; 
                 document.getElementById('dateLockBadge').classList.remove('hidden');
                 document.getElementById('modalOwner').value = currentOverride.owner || defaultOwner;
+                document.getElementById('modalStatus').value = state.anchorStatuses[id] || 'Pending';
             } else {
-                // Custom milestones
                 const m = state.customMilestones.find(milestone => milestone.id === id);
                 if (!m) return;
 
@@ -856,6 +914,7 @@
                 document.getElementById('modalDate').disabled = false;
                 document.getElementById('dateLockBadge').classList.add('hidden');
                 document.getElementById('modalOwner').value = m.owner;
+                document.getElementById('modalStatus').value = m.status || 'Pending';
             }
 
             document.getElementById('milestoneModal').classList.remove('hidden');
@@ -866,6 +925,7 @@
             const title = document.getElementById('modalName').value;
             const date = document.getElementById('modalDate').value;
             const owner = document.getElementById('modalOwner').value || 'Unassigned';
+            const status = document.getElementById('modalStatus').value || 'Pending';
 
             if (!title) {
                 showToast("Milestone Title is required.", "error");
@@ -874,23 +934,21 @@
 
             if (id) {
                 if (id.startsWith('anchor-')) {
-                    // Update core anchor overrides
                     state.anchorOverrides[id] = { title, owner };
+                    state.anchorStatuses[id] = status;
                     showToast("Core anchor details customized!", "success");
                 } else {
-                    // Edit custom milestone details
                     const idx = state.customMilestones.findIndex(m => m.id === id);
                     if (idx !== -1) {
                         if (!date) {
                             showToast("Date is required for custom milestones.", "error");
                             return;
                         }
-                        state.customMilestones[idx] = { id, title, date, owner };
+                        state.customMilestones[idx] = { id, title, date, owner, status };
                         showToast("Milestone settings updated successfully!", "success");
                     }
                 }
             } else {
-                // New custom milestone
                 if (!date) {
                     showToast("Date is required.", "error");
                     return;
@@ -899,7 +957,8 @@
                     id: 'custom-' + Date.now().toString(),
                     title: title,
                     date: date,
-                    owner: owner
+                    owner: owner,
+                    status: status
                 };
                 state.customMilestones.push(newMilestone);
                 showToast("New custom milestone scheduled!", "success");
@@ -910,278 +969,11 @@
             closeMilestoneModal();
         }
 
-        // Action: Clean custom milestones
         function deleteMilestone(id) {
             state.customMilestones = state.customMilestones.filter(m => m.id !== id);
             saveState();
             renderTimeline();
             showToast("Custom milestone removed from plan.", "info");
-        }
-
-        function switchCopilotTab(tab) {
-            const suggestBtn = document.getElementById('tabSuggestBtn');
-            const emailBtn = document.getElementById('tabEmailBtn');
-            const riskBtn = document.getElementById('tabRiskBtn');
-
-            const suggestContent = document.getElementById('copilotSuggestContent');
-            const emailContent = document.getElementById('copilotEmailContent');
-            const riskContent = document.getElementById('copilotRiskContent');
-
-            [suggestBtn, emailBtn, riskBtn].forEach(btn => {
-                btn.style.borderBottomColor = "transparent";
-                btn.classList.add('text-slate-400');
-                btn.classList.remove('text-[#1E252D]');
-            });
-            [suggestContent, emailContent, riskContent].forEach(c => c.classList.add('hidden'));
-
-            if (tab === 'suggest') {
-                suggestBtn.style.borderBottomColor = "#FDB813";
-                suggestBtn.classList.remove('text-slate-400');
-                suggestBtn.classList.add('text-[#1E252D]');
-                suggestContent.classList.remove('hidden');
-            } else if (tab === 'email') {
-                emailBtn.style.borderBottomColor = "#FDB813";
-                emailBtn.classList.remove('text-slate-400');
-                emailBtn.classList.add('text-[#1E252D]');
-                emailContent.classList.remove('hidden');
-            } else if (tab === 'risk') {
-                riskBtn.style.borderBottomColor = "#FDB813";
-                riskBtn.classList.remove('text-slate-400');
-                riskBtn.classList.add('text-[#1E252D]');
-                riskContent.classList.remove('hidden');
-            }
-        }
-
-        function setContextPreset(presetText) {
-            document.getElementById('dealContextInput').value = presetText;
-        }
-
-        // AI Copilot Integration Logic Calling Gemini
-        async function callGemini(userPrompt, systemPrompt = "", structuredConfig = null) {
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: userPrompt }] }]
-            };
-
-            if (systemPrompt) {
-                payload.systemInstruction = {
-                    parts: [{ text: systemPrompt }]
-                };
-            }
-
-            if (structuredConfig) {
-                payload.generationConfig = structuredConfig;
-            }
-
-            let attempts = 0;
-            const maxAttempts = 3;
-            let delay = 1000;
-
-            while (attempts < maxAttempts) {
-                try {
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`API returned status code ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    return result.candidates?.[0]?.content?.parts?.[0]?.text || null;
-                } catch (error) {
-                    attempts++;
-                    if (attempts >= maxAttempts) {
-                        console.error("Gemini Copilot execution failed:", error);
-                        throw error;
-                    }
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2; 
-                }
-            }
-        }
-
-        async function generateAIMilestones() {
-            const context = document.getElementById('dealContextInput').value || "Standard enterprise software evaluation";
-            const generateBtn = document.getElementById('aiSuggestGenerateBtn');
-            const outputContainer = document.getElementById('aiSuggestionsOutput');
-
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = `<span>✨ Mapping Roadmap...</span>`;
-            outputContainer.innerHTML = '';
-
-            const systemPrompt = `You are a world-class sales engineer. Analyze the deal context and provide exactly 3 critical custom milestones that typically occur BEFORE Contract Execution. Output exclusively valid JSON matching the schema guidelines.`;
-            
-            const structuredSchema = {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "ARRAY",
-                    items: {
-                        type: "OBJECT",
-                        properties: {
-                            title: { type: "STRING" },
-                            owner: { type: "STRING" },
-                            offsetDays: { type: "NUMBER", description: "A negative number representing how many days BEFORE Go-Live this milestone must occur." },
-                            reason: { type: "STRING" }
-                        },
-                        required: ["title", "owner", "offsetDays", "reason"]
-                    }
-                }
-            };
-
-            try {
-                const responseText = await callGemini(`Context: ${context}. Go-Live Date: ${state.goLiveDate}. Suggested range should sit chronologically before the planned Contract Signature window.`, systemPrompt, structuredSchema);
-                const milestones = JSON.parse(responseText);
-
-                outputContainer.innerHTML = '';
-                milestones.forEach(m => {
-                    const computedDate = getOffsetDate(state.goLiveDate, m.offsetDays);
-                    
-                    const suggestionCard = document.createElement('div');
-                    suggestionCard.className = "bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-3";
-                    suggestionCard.innerHTML = `
-                        <div class="space-y-1">
-                            <span class="text-[9px] bg-[#FDB813]/10 text-[#E09F00] font-extrabold px-2 py-0.5 rounded-md border border-[#FDB813]/25 uppercase">AI Recommendation</span>
-                            <h4 class="text-xs font-black text-[#1E252D]">${m.title}</h4>
-                            <p class="text-[10px] text-slate-500">Owner: <span class="text-slate-700 font-semibold">${m.owner}</span></p>
-                            <p class="text-[10px] text-slate-400 italic leading-relaxed pt-1">"${m.reason}"</p>
-                        </div>
-                        <div class="flex justify-between items-center pt-2 border-t border-slate-200">
-                            <span class="text-[10px] font-extrabold text-[#E09F00]">📅 ${formatReadableDate(computedDate)}</span>
-                            <button onclick="addSuggestedMilestone('${m.title.replace(/'/g, "\\'")}', '${computedDate}', '${m.owner.replace(/'/g, "\\'")}')" class="bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] font-extrabold text-[10px] px-3 py-1.5 rounded-lg shadow-sm transition-all">
-                                + Add
-                            </button>
-                        </div>
-                    `;
-                    outputContainer.appendChild(suggestionCard);
-                });
-            } catch (error) {
-                showToast("Could not generate AI milestones. Please try again.", "error");
-            } finally {
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = `✨ Ask Gemini for Milestone Recommendations`;
-            }
-        }
-
-        function addSuggestedMilestone(title, date, owner) {
-            const newMilestone = {
-                id: 'custom-' + Date.now().toString(),
-                title: title,
-                date: date,
-                owner: owner
-            };
-            state.customMilestones.push(newMilestone);
-            saveState();
-            renderTimeline();
-            showToast(`Added: ${title}`, "success");
-        }
-
-        async function generateAIUrgencyEmail() {
-            const generateBtn = document.getElementById('aiEmailGenerateBtn');
-            const outputContainer = document.getElementById('aiEmailOutputContainer');
-            const outputText = document.getElementById('aiEmailOutputText');
-
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = `<span>✉️ Drafting Email...</span>`;
-            outputContainer.classList.add('hidden');
-
-            const systemPrompt = "You are an elite enterprise account director. Draft a highly professional, collaborative email from a seller to their champion. Focus strictly on aligning mutual tasks to protect go-live.";
-
-            const promptText = `
-                Draft an urgency alignment email. 
-                Target Go-Live Date: ${state.goLiveDate}
-                Planned Contract Close Deadline: ${getOffsetDate(getOffsetMonths(state.goLiveDate, -4), -35)}
-                Implementation Kick-off Date: ${getOffsetMonths(state.goLiveDate, -4)}
-                Current Date: ${CURRENT_DATE_STR}
-            `;
-
-            try {
-                const responseText = await callGemini(promptText, systemPrompt);
-                outputText.innerText = responseText;
-                outputContainer.classList.remove('hidden');
-                showToast("Urgency email compiled!", "success");
-            } catch (error) {
-                showToast("Could not generate email draft. Please try again.", "error");
-            } finally {
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = `✉️ Draft Partnership Alignment Email`;
-            }
-        }
-
-        async function generateAIRiskAssessment() {
-            const generateBtn = document.getElementById('aiRiskGenerateBtn');
-            const outputContainer = document.getElementById('aiRiskOutputContainer');
-            const outputScore = document.getElementById('aiRiskScore');
-            const outputLevel = document.getElementById('aiRiskLevel');
-            const outputList = document.getElementById('aiRiskList');
-
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = `<span>🛡️ Analyzing Spacing...</span>`;
-            outputContainer.classList.add('hidden');
-
-            const systemPrompt = "Analyze the scheduled milestones and target launch date for logical dependencies or date spacing risks. Return ONLY a valid JSON payload matching the schema guidelines.";
-
-            const structuredSchema = {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: "OBJECT",
-                    properties: {
-                        riskScore: { type: "NUMBER" },
-                        riskLevel: { type: "STRING" },
-                        findings: {
-                            type: "ARRAY",
-                            items: { type: "STRING" }
-                        }
-                    },
-                    required: ["riskScore", "riskLevel", "findings"]
-                }
-            };
-
-            const timelineData = {
-                goLive: state.goLiveDate,
-                customMilestones: state.customMilestones,
-                today: CURRENT_DATE_STR
-            };
-
-            try {
-                const responseText = await callGemini(`Timeline Data: ${JSON.stringify(timelineData)}`, systemPrompt, structuredSchema);
-                const assessment = JSON.parse(responseText);
-
-                outputScore.innerText = `${assessment.riskScore}%`;
-                outputLevel.innerText = assessment.riskLevel;
-
-                outputScore.parentElement.className = `flex justify-between items-center bg-slate-50 border border-slate-200 rounded-xl p-4`;
-
-                outputList.innerHTML = '';
-                assessment.findings.forEach(f => {
-                    const li = document.createElement('li');
-                    li.innerText = f;
-                    outputList.appendChild(li);
-                });
-
-                outputContainer.classList.remove('hidden');
-                showToast("Risk assessment completed!", "success");
-            } catch (error) {
-                showToast("Failed to compile assessment metrics. Please retry.", "error");
-            } finally {
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = `🛡️ Audit Spacing Feasibility`;
-            }
-        }
-
-        function copyToClipboard(containerId) {
-            const text = document.getElementById(containerId).innerText;
-            const dummy = document.createElement("textarea");
-            document.body.appendChild(dummy);
-            dummy.value = text;
-            dummy.select();
-            document.execCommand("copy");
-            document.body.removeChild(dummy);
-            showToast("Copied to clipboard!", "success");
         }
 
         window.onload = function() {
