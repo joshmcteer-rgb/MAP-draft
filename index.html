@@ -17,7 +17,7 @@
         .font-montserrat {
             font-family: 'Montserrat', sans-serif;
         }
-        /* Custom scrollbar for beautiful dashboard aesthetics --> */
+        /* Custom scrollbar for beautiful dashboard aesthetics */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -266,11 +266,12 @@
                         <span class="text-base">💡</span>
                         <h4 class="font-extrabold text-amber-900 uppercase tracking-wide">First-Time Setup Action Required</h4>
                     </div>
-                    <p class="text-amber-800 leading-relaxed">
-                        To activate Supabase persistence, copy and paste this script into your **Supabase SQL Editor** to construct your schema:
+                    <p class="text-amber-800 leading-relaxed font-semibold">
+                        Your Supabase project is active, but we need to create the table structure and grant public permissions. Run this code inside your **Supabase SQL Editor** to construct the schema:
                     </p>
                     <pre class="bg-[#1E252D] text-amber-300 p-3 rounded-lg overflow-x-auto text-[10px] font-mono leading-relaxed select-all">
-CREATE TABLE evaluations (
+-- 1. Create evaluation roadmap table
+CREATE TABLE IF NOT EXISTS evaluations (
   id TEXT PRIMARY KEY,
   prospect_name TEXT NOT NULL,
   discovery_date DATE,
@@ -281,6 +282,12 @@ CREATE TABLE evaluations (
   roi JSONB DEFAULT '{}'::JSONB,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- 2. DISABLE RLS entirely to allow public writes/reads (highly recommended for evaluation sandbox)
+ALTER TABLE evaluations DISABLE ROW LEVEL SECURITY;
+
+-- 3. Enable Postgres realtime replication settings
+ALTER TABLE evaluations REPLICATE IDENTITY FULL;
 ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     <p class="text-[10px] text-amber-700 italic">
                         Once created, reload your preview window. We are currently saving progress locally via sandbox browser storage.
@@ -456,7 +463,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                 <div class="flex items-center gap-1">
                                     <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Dollar Ute %</span>
                                 </div>
-                                <input type="text" id="dollar-curr" class="input-box shadow-sm bg-slate-100/50" readonly>
+                                <input type="text" id="dollar-curr" class="input-box shadow-sm border-slate-350 bg-slate-100/50" readonly>
                                 <input type="number" id="dollar-target" placeholder="Target %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30">
                             </div>
 
@@ -481,7 +488,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                         <input type="number" id="fuel-percent-curr" placeholder="Current %" class="input-box shadow-sm h-10 text-xs">
                                         <div class="flex flex-col items-center">
                                             <input type="number" id="fuel-percent-gain" value="15" placeholder="Gain %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
-                                            <span class="text-[9px] font-bold text-slate-750 uppercase tracking-tighter mt-1">% Gain</span>
+                                            <span class="text-[9px] font-bold text-slate-755 uppercase tracking-tighter mt-1">% Gain</span>
                                         </div>
                                     </div>
                                 </div>
@@ -519,7 +526,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                         <input type="number" id="staff-acc-hours-curr" placeholder="Hrs" class="input-box shadow-sm h-10 text-xs">
                                         <div class="flex flex-col items-center">
                                             <input type="number" id="staff-acc-efficiency" value="50" placeholder="Gain %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
-                                            <span class="text-[9px] font-bold text-slate-750 uppercase tracking-tighter mt-1">% Gain</span>
+                                            <span class="text-[9px] font-bold text-slate-755 uppercase tracking-tighter mt-1">% Gain</span>
                                         </div>
                                     </div>
                                 </div>
@@ -541,7 +548,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                         <input type="number" id="staff-serv-bill-rate" placeholder="Rate" class="input-box shadow-sm h-10 text-xs">
                                         <div class="flex flex-col items-center">
                                             <input type="number" id="staff-serv-daily-reclaim" value="30" placeholder="Min" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
-                                            <span class="text-[8px] font-bold text-slate-750 uppercase tracking-tighter mt-1">Min/Day</span>
+                                            <span class="text-[8px] font-bold text-slate-755 uppercase tracking-tighter mt-1">Min/Day</span>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-3 gap-4 items-center">
@@ -641,10 +648,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
 
     </main>
 
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 mt-auto">
-        <p>© 2026 Texada Software • Evaluation MAP Workspace</p>
-    </footer>
-
     <!-- Milestone Modal -->
     <div id="milestoneModal" class="hidden fixed inset-0 bg-[#12161A]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-200">
         <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl border border-slate-200 space-y-4">
@@ -693,9 +696,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
     </button>
 
     <script>
-        // ----------------──────────────
-        // STEP 3: DATABASE CONFIGURATION
-        // ----------------──────────────
+        const CURRENT_DATE_STR = "2026-07-16"; // Set global timeline run date for 2026
+
         const SUPABASE_URL = "https://lufzkqlpmyzhaovldxjx.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1ZnprcWxwbXl6aGFvdmxkeGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMTg0NDIsImV4cCI6MjA5OTc5NDQ0Mn0.isbnVteRQrd6CHEJrWoCDYncQT8jYQgo8-UvLf7hdls";     
         
@@ -729,7 +731,30 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             }
         };
 
-        // Explicitly defined and hoisted showToast function resolving ReferenceError
+        // Defensive hydration system
+        function ensureStateSafety() {
+            if (!state.anchorOverrides) state.anchorOverrides = {};
+            if (!state.anchorStatuses) {
+                state.anchorStatuses = {
+                    'anchor-discovery': 'Completed',
+                    'anchor-signature': 'Pending',
+                    'anchor-kickoff': 'Pending',
+                    'anchor-golive': 'Pending'
+                };
+            }
+            if (!state.customMilestones) state.customMilestones = [];
+            if (!state.prospectName) state.prospectName = "";
+            if (!state.roi) {
+                state.roi = {
+                    oec: "", annualRev: "", mSpend: "", dollarTarget: "", fuelExpense: "",
+                    fuelPercentCurr: "", fuelPercentGain: "15", returnsMonth: "", staffAccCount: "",
+                    staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
+                    staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
+                };
+            }
+        }
+
+        // Custom notification system
         function showToast(message, type = "success") {
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -760,6 +785,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             }, 4000);
         }
 
+        // Helper slug creator
         function slugify(text) {
             return text.toString().toLowerCase().trim()
                 .replace(/\s+/g, '-')           
@@ -767,6 +793,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 .replace(/\-\-+/g, '-');        
         }
 
+        // Action trigger to start new prospect
         function createNewProspect() {
             window.location.href = window.location.origin + window.location.pathname + '?admin=true';
         }
@@ -777,7 +804,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 return;
             }
 
-            // Async Write back execution context loop to remote database row endpoints
             supabaseInstance
                 .from('evaluations')
                 .upsert({
@@ -794,14 +820,15 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 .then(({ error }) => {
                     if (error) {
                         console.error("Database upsert failed:", error);
-                        if (error.code === 'PGRST205') {
-                            showToast("Database table error. Falling back to local storage.", "info");
+                        if (error.code === '42P01' || error.code === '42501' || error.code === 'PGRST205') {
+                            const helpBox = document.getElementById('setupHelpBox');
+                            if (helpBox) helpBox.classList.remove('hidden');
                         }
                     }
                 });
         }
 
-        function loadState() {
+        function loadState(callback) {
             const urlParams = new URLSearchParams(window.location.search);
             currentProspectId = urlParams.get('prospect');
             
@@ -809,19 +836,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 state.isAdmin = true;
             }
 
-            // Fallback strategy if page is loaded on basic route params
+            // Force empty baseline coordinates if there is no current prospect active in the URL
             if (!supabaseInstance || !currentProspectId) {
-                const savedState = localStorage.getItem('dsr_timeline_blueprint_v3');
-                if (savedState) {
-                    state = JSON.parse(savedState);
+                if (!currentProspectId) {
+                    state.prospectName = "";
+                    state.discoveryDate = "";
+                    state.goLiveDate = "";
+                    state.customMilestones = [];
+                    state.anchorOverrides = {};
+                } else {
+                    const savedState = localStorage.getItem('dsr_timeline_blueprint_v3');
+                    if (savedState) {
+                        state = JSON.parse(savedState);
+                    }
                 }
+                ensureStateSafety();
                 switchTab(state.activeTab || 'timeline');
                 renderTimeline();
                 fillROIInputsFromState();
+                if (callback) callback();
                 return;
             }
 
-            // Remote load hydration execution thread with robust error boundary catching PGRST205 schema cache failures
             supabaseInstance
                 .from('evaluations')
                 .select('*')
@@ -837,25 +873,23 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         state.anchorStatuses = data.anchor_statuses || {};
                         state.roi = data.roi || {};
                     } else if (error) {
-                        console.warn("Supabase fetch failed (PGRST205 / Table Missing). Initiating Local Sandbox Fallback.", error);
-                        
-                        // Enable visual setup troubleshoot helper on screen
+                        console.warn("Supabase fetch failed. Initiating Local Sandbox Fallback.", error);
                         const helpBox = document.getElementById('setupHelpBox');
                         if (helpBox) helpBox.classList.remove('hidden');
 
-                        // Gracefully pull from localStorage sandbox instead
                         const savedState = localStorage.getItem('dsr_timeline_blueprint_v3');
                         if (savedState) {
                             state = JSON.parse(savedState);
                         }
                     }
+                    ensureStateSafety();
                     switchTab(state.activeTab || 'timeline');
                     renderTimeline();
                     fillROIInputsFromState();
+                    if (callback) callback();
                 });
         }
 
-        // Tab Visibility Switcher
         function switchTab(tab) {
             state.activeTab = tab;
             const timelineBtn = document.getElementById('tabTimelineBtn');
@@ -886,8 +920,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             }
         }
 
-        // ROI Math and format utilities
-        const formatCurrency = (val) => {
+        const formatROIVal = (val) => {
             if (val === "" || val === null || val === undefined) return "";
             const num = parseFloat(val.toString().replace(/[^0-9.]/g, ''));
             return isNaN(num) ? '' : new Intl.NumberFormat('en-US', { 
@@ -928,12 +961,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             const shopVal = shopHrsReclaimed * techRate * (techRecovery / 100);
             const total = revGain + totalRecovery + adminVal + shopVal;
 
-            document.getElementById('roi-total-val').innerText = formatCurrency(total) || '0';
-            document.getElementById('roi-res-dollar').innerText = formatCurrency(revGain) || '0';
-            document.getElementById('roi-res-recovery').innerText = formatCurrency(totalRecovery) || '0';
-            document.getElementById('roi-res-admin-val').innerText = formatCurrency(adminVal) || '0';
+            document.getElementById('roi-total-val').innerText = formatROIVal(total) || '0';
+            document.getElementById('roi-res-dollar').innerText = formatROIVal(revGain) || '0';
+            document.getElementById('roi-res-recovery').innerText = formatROIVal(totalRecovery) || '0';
+            document.getElementById('roi-res-admin-val').innerText = formatROIVal(adminVal) || '0';
             document.getElementById('roi-res-admin-hrs').innerText = Math.round(adminHrsReclaimed).toLocaleString() + " Hrs Reclaimed";
-            document.getElementById('roi-res-shop-val').innerText = formatCurrency(shopVal) || '0';
+            document.getElementById('roi-res-shop-val').innerText = formatROIVal(shopVal) || '0';
             document.getElementById('roi-res-shop-hrs').innerText = Math.round(shopHrsReclaimed).toLocaleString() + " Hrs Reclaimed";
         };
 
@@ -971,13 +1004,12 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 if (el) {
                     el.value = map[id] || "";
                     if (el.classList.contains('currency-input') && map[id]) {
-                        el.value = formatCurrency(map[id]);
+                        el.value = formatROIVal(map[id]);
                     }
                 }
             });
         }
 
-        let isMaintManual = false;
         function setupROIEventListeners() {
             const maintInput = document.getElementById('m-spend');
             const targetInput = document.getElementById('dollar-target');
@@ -991,7 +1023,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     if (id === 'oec' && !isMaintManual) {
                         const oecVal = getRawValue('oec');
                         const computedMaint = Math.round(oecVal * 0.05);
-                        maintInput.value = formatCurrency(computedMaint);
+                        maintInput.value = formatROIVal(computedMaint);
                         state.roi.mSpend = computedMaint.toString();
                     }
                     const keyMap = {
@@ -1009,7 +1041,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
 
                 if (input.classList.contains('currency-input')) {
                     input.addEventListener('blur', (e) => {
-                        const formatted = formatCurrency(e.target.value);
+                        const formatted = formatROIVal(e.target.value);
                         e.target.value = formatted;
                         const stateKeyMap = { 'oec': 'oec', 'annual-rev': 'annualRev', 'm-spend': 'mSpend', 'fuel-expense': 'fuelExpense' };
                         if (stateKeyMap[e.target.id]) state.roi[stateKeyMap[e.target.id]] = formatted.replace(/[^0-9.]/g, '');
@@ -1038,115 +1070,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 saveState();
                 calculateROI();
             };
-        }
-
-        // Timeline Coordinates and engine calculations
-        function getOffsetDate(baseDateStr, daysOffset) {
-            const date = new Date(baseDateStr + "T00:00:00");
-            date.setDate(date.getDate() + daysOffset);
-            return date.toISOString().split('T')[0];
-        }
-
-        function getOffsetMonths(baseDateStr, monthsOffset) {
-            const date = new Date(baseDateStr + "T00:00:00");
-            date.setMonth(date.getMonth() + monthsOffset);
-            return date.toISOString().split('T')[0];
-        }
-
-        function formatReadableDate(dateStr) {
-            if (!dateStr) return "TBD";
-            const options = { month: 'short', day: 'numeric', year: 'numeric' };
-            return new Date(dateStr + "T00:00:00").toLocaleDateString('en-US', options);
-        }
-
-        function formatReadableDateShort(dateStr) {
-            if (!dateStr) return "TBD";
-            const options = { month: 'short', day: 'numeric' };
-            return new Date(dateStr + "T00:00:00").toLocaleDateString('en-US', options);
-        }
-
-        // Form submit handler that generates a clean slug and inserts into Supabase with try-catch safe blocks
-        async function submitBaselineDates() {
-            const companyName = document.getElementById('initCompanyNameInput').value.trim();
-            const discVal = document.getElementById('initDiscoveryInput').value;
-            const liveVal = document.getElementById('initGoLiveInput').value;
-
-            if (!companyName) {
-                showToast("Company Name is required to build a prospect portal.", "error");
-                return;
-            }
-            if (!discVal || !liveVal) {
-                showToast("Both Discovery Date and Target Go-Live Date are required.", "error");
-                return;
-            }
-
-            // Generate URL slug and append a small random block to prevent collisions
-            const slug = slugify(companyName) + '-' + Math.floor(1000 + Math.random() * 9000);
-
-            state.discoveryDate = discVal;
-            state.goLiveDate = liveVal;
-            state.prospectName = companyName;
-
-            if (supabaseInstance) {
-                try {
-                    const { error } = await supabaseInstance
-                        .from('evaluations')
-                        .insert({
-                            id: slug,
-                            prospect_name: companyName,
-                            discovery_date: discVal,
-                            go_live_date: liveVal,
-                            custom_milestones: state.customMilestones,
-                            anchor_overrides: state.anchorOverrides,
-                            anchor_statuses: state.anchorStatuses,
-                            roi: state.roi
-                        });
-
-                    if (error) throw error;
-
-                    showToast("Prospect portal successfully created in Supabase!", "success");
-                    
-                    // Redirect browser to the freshly created prospect page in admin mode
-                    setTimeout(() => {
-                        window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
-                    }, 1000);
-
-                } catch (err) {
-                    console.error("Supabase creation failed:", err);
-                    
-                    // Show helpful troubleshoot tip
-                    const helpBox = document.getElementById('setupHelpBox');
-                    if (helpBox) helpBox.classList.remove('hidden');
-
-                    showToast("Database connection failed. Saving locally instead.", "error");
-                    
-                    // Local fallback save and reload
-                    currentProspectId = slug;
-                    saveState();
-                    setTimeout(() => {
-                        window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
-                    }, 1500);
-                }
-            } else {
-                // Local-only sandbox fallback
-                currentProspectId = slug;
-                saveState();
-                window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
-            }
-        }
-
-        function updateDiscoveryDate(val) {
-            if (!val) return;
-            state.discoveryDate = val;
-            saveState();
-            renderTimeline();
-        }
-
-        function updateGoLiveDate(val) {
-            if (!val) return;
-            state.goLiveDate = val;
-            saveState();
-            renderTimeline();
         }
 
         function renderTimeline() {
@@ -1199,7 +1122,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
 
             const riskPill = document.getElementById('metricRisk');
             riskPill.innerText = riskRating;
-            riskPill.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${riskRating === 'CRITICAL' ? 'bg-rose-100 text-rose-800' : riskRating === 'COMPRESSED' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`;
+            riskPill.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 uppercase tracking-wide ${riskRating === 'CRITICAL' ? 'bg-rose-100 text-rose-800' : riskRating === 'COMPRESSED' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`;
 
             const anchors = [
                 { id: 'anchor-discovery', title: state.anchorOverrides['anchor-discovery']?.title || 'Strategic Discovery Call', date: discovery, owner: state.anchorOverrides['anchor-discovery']?.owner || 'Acme Champion & Seller Team', isAnchor: true, type: 'discovery', status: state.anchorStatuses['anchor-discovery'] || 'Completed', icon: `<svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-400', indicatorColor: 'bg-slate-400 ring-slate-100', shortName: 'Discovery' },
@@ -1351,12 +1274,42 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             if (!state.isAdmin) return;
             const isAnchor = id.startsWith('anchor-');
             if (isAnchor) {
+                const goLive = state.goLiveDate;
+                const kickOff = getOffsetMonths(goLive, -4); 
+                const signature = getOffsetDate(kickOff, -35); 
+                const discovery = state.discoveryDate;
+
+                let dateVal = "";
+                let defaultTitle = "";
+                let defaultOwner = "";
+
+                if (id === 'anchor-discovery') {
+                    dateVal = discovery;
+                    defaultTitle = "Strategic Discovery Call";
+                    defaultOwner = "Acme Champion & Seller Team";
+                } else if (id === 'anchor-signature') {
+                    dateVal = signature;
+                    defaultTitle = "Contract Finalization & Signed";
+                    defaultOwner = "Legal & Executive Sponsors";
+                } else if (id === 'anchor-kickoff') {
+                    dateVal = kickOff;
+                    defaultTitle = "Strategic Onboarding Kick-off";
+                    defaultOwner = "Implementation Leads";
+                } else if (id === 'anchor-golive') {
+                    dateVal = goLive;
+                    defaultTitle = "Platform Production Go-Live 🎉";
+                    defaultOwner = "Executive Champions & All Users";
+                }
+
+                const currentOverride = state.anchorOverrides[id] || {};
+                
                 document.getElementById('modalTitle').innerText = "Edit Core Anchor Milestone";
                 document.getElementById('modalId').value = id;
-                document.getElementById('modalName').value = state.anchorOverrides[id]?.title || "";
-                document.getElementById('modalDate').disabled = true;
+                document.getElementById('modalName').value = currentOverride.title || defaultTitle;
+                document.getElementById('modalDate').value = dateVal;
+                document.getElementById('modalDate').disabled = true; 
                 document.getElementById('dateLockBadge').classList.remove('hidden');
-                document.getElementById('modalOwner').value = state.anchorOverrides[id]?.owner || "";
+                document.getElementById('modalOwner').value = currentOverride.owner || defaultOwner;
                 document.getElementById('modalStatus').value = state.anchorStatuses[id] || 'Pending';
             } else {
                 const m = state.customMilestones.find(milestone => milestone.id === id);
@@ -1399,9 +1352,91 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             closeMilestoneModal();
         }
 
+        async function submitBaselineDates() {
+            const companyName = document.getElementById('initCompanyNameInput').value.trim();
+            const discVal = document.getElementById('initDiscoveryInput').value;
+            const liveVal = document.getElementById('initGoLiveInput').value;
+
+            if (!companyName) {
+                showToast("Company Name is required to build a prospect portal.", "error");
+                return;
+            }
+            if (!discVal || !liveVal) {
+                showToast("Both Discovery Date and Target Go-Live Date are required.", "error");
+                return;
+            }
+
+            const slug = slugify(companyName) + '-' + Math.floor(1000 + Math.random() * 9000);
+
+            state.discoveryDate = discVal;
+            state.goLiveDate = liveVal;
+            state.prospectName = companyName;
+
+            if (supabaseInstance) {
+                try {
+                    const { error } = await supabaseInstance
+                        .from('evaluations')
+                        .insert({
+                            id: slug,
+                            prospect_name: companyName,
+                            discovery_date: discVal,
+                            go_live_date: liveVal,
+                            custom_milestones: state.customMilestones,
+                            anchor_overrides: state.anchorOverrides,
+                            anchor_statuses: state.anchorStatuses,
+                            roi: state.roi
+                        });
+
+                    if (error) throw error;
+
+                    showToast("Prospect portal successfully created in Supabase!", "success");
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
+                    }, 1000);
+
+                } catch (err) {
+                    console.error("Supabase creation failed:", err);
+                    const helpBox = document.getElementById('setupHelpBox');
+                    if (helpBox) helpBox.classList.remove('hidden');
+
+                    showToast("Database connection failed. Saving locally instead.", "error");
+                    currentProspectId = slug;
+                    saveState();
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
+                    }, 1500);
+                }
+            } else {
+                currentProspectId = slug;
+                saveState();
+                window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
+            }
+        }
+
         function openMilestoneModal() { document.getElementById('milestoneModal').classList.remove('hidden'); }
         function closeMilestoneModal() { document.getElementById('milestoneModal').classList.add('hidden'); }
         function deleteMilestone(id) { state.customMilestones = state.customMilestones.filter(m => m.id !== id); saveState(); renderTimeline(); }
+
+        function toggleAdmin(forceState = null) {
+            state.isAdmin = forceState !== null ? forceState : !state.isAdmin;
+            
+            const banner = document.getElementById('adminBanner');
+            const badge = document.getElementById('adminBadge');
+            const addBtn = document.getElementById('addMilestoneBtn');
+            
+            if (state.isAdmin) {
+                banner.classList.remove('hidden');
+                badge.classList.remove('hidden');
+                addBtn.classList.remove('hidden');
+                showToast("Admin Controls Unlocked", "info");
+            } else {
+                banner.classList.add('hidden');
+                badge.classList.add('hidden');
+                addBtn.classList.add('hidden');
+                showToast("Read-Only Client Mode Active", "success");
+            }
+            renderTimeline();
+        }
 
         function insertVerticalTodayBanner(container) {
             const separator = document.createElement('div');
@@ -1418,8 +1453,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
         }
 
         window.onload = function() {
-            loadState();
-            setupROIEventListeners();
+            loadState(function() {
+                // Initialize events only after data is loaded and hydrated defensively
+                setupROIEventListeners();
+            });
 
             // Real-Time Listener syncing interface on broadcast payload updates
             if (supabaseInstance && currentProspectId) {
@@ -1434,6 +1471,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         state.anchorStatuses = data.anchor_statuses;
                         state.roi = data.roi;
                         
+                        ensureStateSafety();
                         renderTimeline();
                         fillROIInputsFromState();
                         calculateROI();
