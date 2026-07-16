@@ -729,24 +729,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
         <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-350 ease-in-out whitespace-nowrap">Texada Admin Mode</span>
     </button>
 
+    <!-- Database and Application Scripts -->
     <script>
-        const CURRENT_DATE_STR = "2026-07-16"; // Set global timeline run date for 2026
-
+        // ----------------──────────────
+        // STEP 3: DATABASE CONFIGURATION
+        // ----------------──────────────
         const SUPABASE_URL = "https://lufzkqlpmyzhaovldxjx.supabase.co"; 
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1ZnprcWxwbXl6aGFvdmxkeGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMTg0NDIsImV4cCI6MjA5OTc5NDQ0Mn0.isbnVteRQrd6CHEJrWoCDYncQT8jYQgo8-UvLf7hdls";     
+        const CURRENT_DATE_STR = "2026-07-16"; // Core timeline tracking timestamp (July 16, 2026)
         
         let supabaseInstance = null;
         let currentProspectId = "";
-
+        let isMaintManual = false; // Declared globally to prevent ReferenceErrors
+        
         function getSupabaseClient() {
             if (supabaseInstance) return supabaseInstance;
-            if (typeof supabase !== 'undefined') {
-                try {
-                    supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    return supabaseInstance;
-                } catch (err) {
-                    console.error("Supabase initialization failed:", err);
-                }
+            if (typeof supabase !== 'undefined' && SUPABASE_URL.indexOf("your-project-id") === -1) {
+                supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                return supabaseInstance;
             }
             return null;
         }
@@ -1027,9 +1027,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
 
         function loadState(callback) {
             const urlParams = new URLSearchParams(window.location.search);
-            currentProspectId = urlParams.get('prospect');
             
-            if (urlParams.get('admin') === 'true') {
+            // Fix: Do not overwrite the in-memory currentProspectId if set by the Directory UI selection
+            if (!currentProspectId) {
+                currentProspectId = urlParams.get('prospect');
+            }
+            
+            if (urlParams.get('admin') === 'true' || state.isAdmin) {
                 state.isAdmin = true;
             }
 
@@ -1128,6 +1132,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 style: 'currency', currency: 'USD', maximumFractionDigits: 0 
             }).format(num);
         };
+        const formatCurrency = formatROIVal; // Alias to prevent ReferenceError during auto-calculations
 
         const getRawValue = (id) => {
             const el = document.getElementById(id);
@@ -1224,7 +1229,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     if (id === 'oec' && !isMaintManual) {
                         const oecVal = getRawValue('oec');
                         const computedMaint = Math.round(oecVal * 0.05);
-                        maintInput.value = formatROIVal(computedMaint);
+                        maintInput.value = formatCurrency(computedMaint); // Patched format function name reference
                         state.roi.mSpend = computedMaint.toString();
                     }
                     const keyMap = {
