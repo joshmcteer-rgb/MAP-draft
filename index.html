@@ -230,37 +230,74 @@
         
         <!-- TIMELINE TAB CONTENT WRAPPER -->
         <div id="timelineContentWrapper" class="space-y-8">
-            <!-- INITIAL EMPTY STATE PANEL -->
+            <!-- INITIAL EMPTY STATE / GATEWAY HUB PANEL -->
             <div id="emptyStatePanel" class="bg-white border border-slate-200 rounded-3xl p-8 md:p-12 text-center space-y-8 shadow-sm">
                 <div class="max-w-md mx-auto space-y-2">
-                    <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight">Set Plan Baseline Coordinates</h2>
+                    <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight uppercase">Texada Workspace Gateway</h2>
                     <p class="text-sm text-slate-500 leading-relaxed">
-                        Provide the prospect company name, Discovery engagement date, and Target Go-Live to construct the backward-calculated implementation roadmap.
+                        Create a brand-new customer alignment roadmap blueprint or open an existing saved evaluation workspace.
                     </p>
                 </div>
 
-                <!-- Three-Field Interactive Setup Form -->
-                <div class="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 text-left bg-[#F8FAFC] p-6 rounded-2xl border border-slate-200">
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Company Name (Prospect)</label>
-                        <input type="text" id="initCompanyNameInput" placeholder="e.g., Acme Corporation" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Discovery Call Date</label>
-                        <input type="date" id="initDiscoveryInput" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Target Go-Live Date</label>
-                        <input type="date" id="initGoLiveInput" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
-                    </div>
-                    <div class="sm:col-span-2 pt-2">
-                        <button onclick="submitBaselineDates()" class="w-full bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] font-black py-3.5 px-6 rounded-xl text-sm transition-all shadow-md shadow-[#FDB813]/10">
-                            Generate Mutual Action Plan
+                <!-- Dual Control Gateway Card -->
+                <div class="max-w-md mx-auto bg-[#F8FAFC] rounded-2xl border border-slate-200 overflow-hidden shadow-inner">
+                    <!-- Gateway Switcher -->
+                    <div class="grid grid-cols-2 border-b border-slate-200 bg-slate-100 text-xs font-bold text-slate-500">
+                        <button id="gatewayTabNewBtn" onclick="switchGatewayTab('new')" class="py-3.5 px-4 border-r border-slate-200 bg-white text-[#1E252D] focus:outline-none uppercase tracking-wider font-extrabold">
+                            ➕ Create New Plan
                         </button>
+                        <button id="gatewayTabExistingBtn" onclick="switchGatewayTab('existing')" class="py-3.5 px-4 hover:bg-slate-50 hover:text-slate-700 transition-all focus:outline-none uppercase tracking-wider font-extrabold">
+                            📂 Open Existing Plan
+                        </button>
+                    </div>
+
+                    <!-- Gateway Tab: Create New Plan -->
+                    <div id="gatewayTabNewContent" class="p-6 text-left space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Company Name (Prospect)</label>
+                            <input type="text" id="initCompanyNameInput" placeholder="e.g., Acme Corporation" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Discovery Call Date</label>
+                                <input type="date" id="initDiscoveryInput" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Target Go-Live Date</label>
+                                <input type="date" id="initGoLiveInput" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                            </div>
+                        </div>
+                        <div class="pt-2">
+                            <button onclick="submitBaselineDates()" class="w-full bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] font-black py-3.5 px-6 rounded-xl text-sm transition-all shadow-md shadow-[#FDB813]/10">
+                                Generate Mutual Action Plan
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Gateway Tab: Open Existing Plan -->
+                    <div id="gatewayTabExistingContent" class="hidden p-6 text-left space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select Active Prospect Directory</label>
+                            <select id="existingProspectDropdown" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813] font-semibold">
+                                <option value="">-- Connecting to Database... --</option>
+                            </select>
+                        </div>
+                        <div class="bg-white border border-slate-200 p-4 rounded-xl space-y-2">
+                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Security Credentials</span>
+                            <div class="flex items-center justify-between gap-4">
+                                <label class="text-xs font-semibold text-slate-600">Open with Admin (Edit) Rights</label>
+                                <input type="checkbox" id="existingProspectAdminToggle" checked class="h-4 w-4 text-[#FDB813] focus:ring-[#FDB813] border-slate-300 rounded">
+                            </div>
+                        </div>
+                        <div class="pt-2">
+                            <button onclick="launchExistingProspect()" class="w-full bg-[#1E252D] hover:bg-slate-800 text-[#FDB813] font-black py-3.5 px-6 rounded-xl text-sm transition-all shadow-md">
+                                Open Selected Blueprint
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Database Setup Troubleshooting Guide -->
+                <!-- Troubleshooting Guide -->
                 <div id="setupHelpBox" class="hidden text-left bg-amber-50 border border-amber-200 rounded-2xl p-5 max-w-md mx-auto text-xs space-y-3">
                     <div class="flex items-center gap-2">
                         <span class="text-base">💡</span>
@@ -286,12 +323,9 @@ CREATE TABLE IF NOT EXISTS evaluations (
 -- 2. DISABLE RLS entirely to allow public writes/reads (highly recommended for evaluation sandbox)
 ALTER TABLE evaluations DISABLE ROW LEVEL SECURITY;
 
--- 3. Enable Postgres realtime replication settings
-ALTER TABLE evaluations REPLICATE IDENTITY FULL;
+-- 3. Enable Postgres realtime settings
+ALTER TABLE evaluations REPLICA IDENTITY FULL;
 ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
-                    <p class="text-[10px] text-amber-700 italic">
-                        Once created, reload your preview window. We are currently saving progress locally via sandbox browser storage.
-                    </p>
                 </div>
             </div>
 
@@ -704,9 +738,61 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
         let supabaseInstance = null;
         let currentProspectId = "";
 
-        // Establish safe connection if parameters are modified
-        if (SUPABASE_URL.indexOf("your-project-id") === -1 && typeof supabase !== 'undefined') {
-            supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        function getSupabaseClient() {
+            if (supabaseInstance) return supabaseInstance;
+            if (typeof supabase !== 'undefined') {
+                try {
+                    supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    return supabaseInstance;
+                } catch (err) {
+                    console.error("Supabase initialization failed:", err);
+                }
+            }
+            return null;
+        }
+
+        // Calculate dynamic relative shifts
+        function getOffsetDate(baseDateStr, daysOffset) {
+            const date = new Date(baseDateStr + "T00:00:00");
+            date.setDate(date.getDate() + daysOffset);
+            return date.toISOString().split('T')[0];
+        }
+
+        function getOffsetMonths(baseDateStr, monthsOffset) {
+            const date = new Date(baseDateStr + "T00:00:00");
+            date.setMonth(date.getMonth() + monthsOffset);
+            return date.toISOString().split('T')[0];
+        }
+
+        function formatReadableDate(dateStr) {
+            if (!dateStr) return "TBD";
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            const date = new Date(dateStr + "T00:00:00");
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        // Human readable date converter (Short)
+        function formatReadableDateShort(dateStr) {
+            if (!dateStr) return "TBD";
+            const options = { month: 'short', day: 'numeric' };
+            const date = new Date(dateStr + "T00:00:00");
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function updateDiscoveryDate(val) {
+            if (!val) return;
+            state.discoveryDate = val;
+            saveState();
+            renderTimeline();
+            showToast("Discovery date updated.", "success");
+        }
+
+        function updateGoLiveDate(val) {
+            if (!val) return;
+            state.goLiveDate = val;
+            saveState();
+            renderTimeline();
+            showToast("Target launch date recalculated.", "success");
         }
 
         let state = {
@@ -731,7 +817,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             }
         };
 
-        // Defensive hydration system
+        // Defensive hydration system to prevent old/malformed states from throwing TypeErrors
         function ensureStateSafety() {
             if (!state.anchorOverrides) state.anchorOverrides = {};
             if (!state.anchorStatuses) {
@@ -754,7 +840,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             }
         }
 
-        // Custom notification system
+        // Custom notification system (restored)
         function showToast(message, type = "success") {
             const container = document.getElementById('toastContainer');
             if (!container) return;
@@ -788,23 +874,134 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
         // Helper slug creator
         function slugify(text) {
             return text.toString().toLowerCase().trim()
-                .replace(/\s+/g, '-')           
-                .replace(/[^\w\-]+/g, '')       
-                .replace(/\-\-+/g, '-');        
+                .replace(/\s+/g, '-')           // Replace spaces with -
+                .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+                .replace(/\-\-+/g, '-');        // Replace multiple - with single -
         }
 
         // Action trigger to start new prospect
         function createNewProspect() {
-            window.location.href = window.location.origin + window.location.pathname + '?admin=true';
+            // Set browser parameter clean and switch empty panels
+            state.prospectName = "";
+            state.goLiveDate = "";
+            state.discoveryDate = "";
+            state.customMilestones = [];
+            state.anchorOverrides = {};
+            currentProspectId = "";
+            
+            try {
+                const cleanUrl = window.location.origin + window.location.pathname + '?admin=true';
+                window.history.pushState({ path: cleanUrl }, '', cleanUrl);
+            } catch (e) {
+                console.warn("Iframe blocked window.history navigation.", e);
+            }
+            
+            // Switch tabs
+            const emptyState = document.getElementById('emptyStatePanel');
+            const workspace = document.getElementById('timelineWorkspace');
+            const headerPickers = document.getElementById('headerDatePickers');
+            
+            emptyState.classList.remove('hidden');
+            workspace.classList.add('hidden');
+            headerPickers.classList.add('hidden');
+
+            document.getElementById('initCompanyNameInput').value = "";
+            document.getElementById('initDiscoveryInput').value = "";
+            document.getElementById('initGoLiveInput').value = "";
+            
+            showToast("Portal reset! Ready to design a new roadmap.", "info");
+        }
+
+        function switchGatewayTab(tab) {
+            const tabNewBtn = document.getElementById('gatewayTabNewBtn');
+            const tabExistingBtn = document.getElementById('gatewayTabExistingBtn');
+            const newContent = document.getElementById('gatewayTabNewContent');
+            const existingContent = document.getElementById('gatewayTabExistingContent');
+
+            if (tab === 'new') {
+                tabNewBtn.className = "py-3.5 px-4 border-r border-slate-200 bg-white text-[#1E252D] focus:outline-none uppercase tracking-wider font-extrabold";
+                tabExistingBtn.className = "py-3.5 px-4 hover:bg-slate-50 hover:text-slate-700 transition-all focus:outline-none uppercase tracking-wider font-extrabold";
+                newContent.classList.remove('hidden');
+                existingContent.classList.add('hidden');
+            } else {
+                tabExistingBtn.className = "py-3.5 px-4 border-l border-slate-200 bg-white text-[#1E252D] focus:outline-none uppercase tracking-wider font-extrabold";
+                tabNewBtn.className = "py-3.5 px-4 hover:bg-slate-50 hover:text-slate-700 transition-all focus:outline-none uppercase tracking-wider font-extrabold";
+                existingContent.classList.remove('hidden');
+                newContent.classList.add('hidden');
+                loadExistingDirectory();
+            }
+        }
+
+        async function loadExistingDirectory() {
+            const dropdown = document.getElementById('existingProspectDropdown');
+            if (!dropdown) return;
+
+            const client = getSupabaseClient();
+            if (!client) {
+                dropdown.innerHTML = '<option value="">-- DB Offline (Sandbox Mode active) --</option>';
+                return;
+            }
+
+            try {
+                const { data, error } = await client
+                    .from('evaluations')
+                    .select('id, prospect_name, updated_at')
+                    .order('updated_at', { ascending: false });
+
+                if (error) throw error;
+
+                dropdown.innerHTML = '';
+                if (!data || data.length === 0) {
+                    dropdown.innerHTML = '<option value="">No Active Prospects in DB</option>';
+                    return;
+                }
+
+                data.forEach(p => {
+                    const dateObj = new Date(p.updated_at);
+                    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                    dropdown.innerHTML += `<option value="${p.id}">${p.prospect_name || p.id} (Updated: ${formattedDate})</option>`;
+                });
+
+            } catch (err) {
+                console.error("Failed to load prospect database query:", err);
+                dropdown.innerHTML = '<option value="">Error pulling database list</option>';
+            }
+        }
+
+        function launchExistingProspect() {
+            const id = document.getElementById('existingProspectDropdown').value;
+            const isAdmin = document.getElementById('existingProspectAdminToggle').checked;
+            
+            if (!id) {
+                showToast("Please select a prospect to launch.", "error");
+                return;
+            }
+
+            // Perform direct in-memory load on selected items to avoid iframe blockages
+            currentProspectId = id;
+            state.isAdmin = isAdmin;
+
+            try {
+                let url = window.location.origin + window.location.pathname + '?prospect=' + id;
+                if (isAdmin) url += '&admin=true';
+                window.history.pushState({ path: url }, '', url);
+            } catch (e) {
+                console.warn("Iframe blocked window.history navigation.", e);
+            }
+
+            toggleAdmin(isAdmin);
+            loadState();
+            showToast("Workspace opened successfully!", "success");
         }
 
         function saveState() {
-            if (!supabaseInstance || !currentProspectId) {
+            const client = getSupabaseClient();
+            if (!client || !currentProspectId) {
                 localStorage.setItem('dsr_timeline_blueprint_v3', JSON.stringify(state));
                 return;
             }
 
-            supabaseInstance
+            client
                 .from('evaluations')
                 .upsert({
                     id: currentProspectId,
@@ -836,8 +1033,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 state.isAdmin = true;
             }
 
+            const client = getSupabaseClient();
+
             // Force empty baseline coordinates if there is no current prospect active in the URL
-            if (!supabaseInstance || !currentProspectId) {
+            if (!client || !currentProspectId) {
                 if (!currentProspectId) {
                     state.prospectName = "";
                     state.discoveryDate = "";
@@ -858,7 +1057,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 return;
             }
 
-            supabaseInstance
+            client
                 .from('evaluations')
                 .select('*')
                 .eq('id', currentProspectId)
@@ -890,6 +1089,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 });
         }
 
+        // Tab Visibility Switcher
         function switchTab(tab) {
             state.activeTab = tab;
             const timelineBtn = document.getElementById('tabTimelineBtn');
@@ -920,6 +1120,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             }
         }
 
+        // ROI Math and format utilities
         const formatROIVal = (val) => {
             if (val === "" || val === null || val === undefined) return "";
             const num = parseFloat(val.toString().replace(/[^0-9.]/g, ''));
@@ -1091,7 +1292,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             document.getElementById('headerDiscoveryInput').value = state.discoveryDate;
             document.getElementById('headerGoLiveInput').value = state.goLiveDate;
 
-            // Dynamically show the dynamic co-brand Company Name in the subheader matching image_f2d006.png structure
+            // Dynamically show the dynamic co-brand Company Name in the subheader
             document.getElementById('headerSubtitle').innerHTML = state.prospectName ? `Co-developed timeline mapping for <strong>${state.prospectName}</strong>` : "Co-developed timeline mapping for Acme Corp & Partners";
 
             const goLive = state.goLiveDate;
@@ -1192,7 +1393,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
 
             positions.forEach((pos, idx) => {
                 const m = pos.milestone;
-                let statusBorderColor = "border-slate-355 bg-white", statusBadgeDot = "★";
+                let statusBorderColor = "border-slate-350 bg-white", statusBadgeDot = "★";
                 if (m.status === 'Completed') { statusBorderColor = "border-emerald-500 bg-emerald-50 text-emerald-600 font-extrabold ring-4 ring-emerald-100"; statusBadgeDot = "✓"; }
                 else if (m.status === 'In Progress') { statusBorderColor = "border-amber-500 bg-amber-50 text-amber-700 animate-pulse ring-4 ring-amber-100"; statusBadgeDot = "●"; }
                 else if (m.status === 'Blocked') { statusBorderColor = "border-rose-500 bg-rose-50 text-rose-700 font-extrabold"; statusBadgeDot = "!"; }
@@ -1352,6 +1553,18 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             closeMilestoneModal();
         }
 
+        function updateMilestoneStatus(id, value) {
+            if (id.startsWith('anchor-')) {
+                state.anchorStatuses[id] = value;
+            } else {
+                const idx = state.customMilestones.findIndex(m => m.id === id);
+                if (idx !== -1) state.customMilestones[idx].status = value;
+            }
+            saveState();
+            renderTimeline();
+            showToast("Milestone status updated.", "success");
+        }
+
         async function submitBaselineDates() {
             const companyName = document.getElementById('initCompanyNameInput').value.trim();
             const discVal = document.getElementById('initDiscoveryInput').value;
@@ -1368,31 +1581,51 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
 
             const slug = slugify(companyName) + '-' + Math.floor(1000 + Math.random() * 9000);
 
+            // Set state properties immediately
             state.discoveryDate = discVal;
             state.goLiveDate = liveVal;
             state.prospectName = companyName;
 
-            if (supabaseInstance) {
+            const client = getSupabaseClient();
+
+            if (client) {
                 try {
-                    const { error } = await supabaseInstance
+                    // Standard compliance array wrapping for modern Supabase v2 JS specifications
+                    const { error } = await client
                         .from('evaluations')
-                        .insert({
-                            id: slug,
-                            prospect_name: companyName,
-                            discovery_date: discVal,
-                            go_live_date: liveVal,
-                            custom_milestones: state.customMilestones,
-                            anchor_overrides: state.anchorOverrides,
-                            anchor_statuses: state.anchorStatuses,
-                            roi: state.roi
-                        });
+                        .insert([
+                            {
+                                id: slug,
+                                prospect_name: companyName,
+                                discovery_date: discVal,
+                                go_live_date: liveVal,
+                                custom_milestones: state.customMilestones,
+                                anchor_overrides: state.anchorOverrides,
+                                anchor_statuses: state.anchorStatuses,
+                                roi: state.roi
+                            }
+                        ]);
 
                     if (error) throw error;
 
                     showToast("Prospect portal successfully created in Supabase!", "success");
-                    setTimeout(() => {
-                        window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
-                    }, 1000);
+                    
+                    // Seamless Navigation (Instant In-Memory Transition + Quiet URL Update)
+                    currentProspectId = slug;
+                    state.isAdmin = true;
+                    
+                    try {
+                        const newUrl = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
+                        window.history.pushState({ path: newUrl }, '', newUrl);
+                    } catch(e) {
+                        console.warn("Iframe blocked window.history navigation. Keeping active in-memory portal state.", e);
+                    }
+
+                    // Enable Admin banner and redraw workspace right now
+                    toggleAdmin(true); 
+                    renderTimeline();
+                    fillROIInputsFromState();
+                    calculateROI();
 
                 } catch (err) {
                     console.error("Supabase creation failed:", err);
@@ -1400,16 +1633,27 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     if (helpBox) helpBox.classList.remove('hidden');
 
                     showToast("Database connection failed. Saving locally instead.", "error");
+                    
+                    // Fail gracefully to local sandbox mode
                     currentProspectId = slug;
+                    state.isAdmin = true;
                     saveState();
-                    setTimeout(() => {
-                        window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
-                    }, 1500);
+                    
+                    toggleAdmin(true);
+                    renderTimeline();
+                    fillROIInputsFromState();
+                    calculateROI();
                 }
             } else {
+                // Offline fallback
                 currentProspectId = slug;
+                state.isAdmin = true;
                 saveState();
-                window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
+                
+                toggleAdmin(true);
+                renderTimeline();
+                fillROIInputsFromState();
+                calculateROI();
             }
         }
 
@@ -1458,9 +1702,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 setupROIEventListeners();
             });
 
+            const client = getSupabaseClient();
+
             // Real-Time Listener syncing interface on broadcast payload updates
-            if (supabaseInstance && currentProspectId) {
-                supabaseInstance
+            if (client && currentProspectId) {
+                client
                     .channel('evaluations-realtime')
                     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'evaluations', filter: `id=eq.${currentProspectId}` }, payload => {
                         const data = payload.new;
