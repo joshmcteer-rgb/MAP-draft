@@ -6,13 +6,18 @@
     <title>Texada | Mutual Action Plan Workspace</title>
     <!-- Tailwind CSS for high-fidelity layouts -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font family for clean enterprise typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client Library SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Montserrat & Inter Font families for clean enterprise typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom scrollbar for beautiful dashboard aesthetics */
+        .font-montserrat {
+            font-family: 'Montserrat', sans-serif;
+        }
+        /* Custom scrollbar for beautiful dashboard aesthetics --> */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -28,219 +33,645 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94A3B8;
         }
+
+        /* --- ROI CALCULATOR STYLING --- */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-box {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+            font-weight: 800;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+        }
+
+        .input-box:focus {
+            outline: none;
+            border-color: #FDB813;
+            box-shadow: 0 0 0 4px rgba(253, 184, 19, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .result-item {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+            border-left: 8px solid #FDB813; 
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .result-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            background-color: #fafafa;
+            cursor: help;
+        }
+
+        /* --- TOOLTIP STYLING --- */
+        .tooltip, .field-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: left;
+            padding: 1.25rem;
+            border-radius: 0.75rem;
+            z-index: 50;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+
+        .tooltip {
+            left: 50%;
+            bottom: 115%;
+            transform: translateX(-50%) translateY(10px);
+            width: 320px;
+        }
+
+        @media (min-width: 640px) {
+            .tooltip {
+                width: 400px;
+            }
+        }
+
+        .field-tooltip {
+            left: 50%;
+            bottom: 125%;
+            transform: translateX(-50%) translateY(10px);
+            width: 260px;
+            padding: 0.85rem;
+            font-size: 11px;
+            font-weight: 500;
+            line-height: 1.5;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -8px;
+            border-width: 8px;
+            border-style: solid;
+            border-color: #0f172a transparent transparent transparent;
+        }
+
+        .field-tooltip::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #0f172a transparent transparent transparent;
+        }
+
+        .result-item:hover .tooltip, 
+        .field-tooltip-wrapper:hover .field-tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .field-tooltip-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .count-up {
+            transition: all 0.5s ease-out;
+        }
     </style>
 </head>
 <body class="bg-[#F8FAFC] text-[#1E252D] min-h-screen antialiased flex flex-col">
 
-    <!-- Seller Admin Indicator Banner (Premium charcoal grey banner with gold trim) -->
+    <!-- Texada Admin Indicator Banner -->
     <div id="adminBanner" class="hidden bg-[#1E252D] border-b border-[#FDB813]/40 text-white px-6 py-3.5 text-center text-sm font-semibold relative z-50 shadow-md flex items-center justify-center gap-3">
         <span class="inline-flex rounded-full h-2.5 w-2.5 bg-[#FDB813] animate-pulse"></span>
-        <span class="text-xs md:text-sm text-slate-200">Seller Workspace Active — Customize core milestones and manage client alignment paths.</span>
-        <button onclick="toggleAdmin(false)" class="bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] rounded-lg px-3 py-1 text-xs transition-all font-bold shadow-sm">
-            Exit Workspace
-        </button>
+        <span class="text-xs md:text-sm text-slate-200 font-medium">Texada Admin Mode Active — Customize core milestones and manage client alignment paths.</span>
+        <div class="flex items-center gap-2">
+            <button onclick="createNewProspect()" class="bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] rounded-lg px-3 py-1 text-xs transition-all font-bold shadow-sm">
+                + Create New
+            </button>
+            <button onclick="toggleAdmin(false)" class="bg-slate-700 hover:bg-slate-600 text-white rounded-lg px-3 py-1 text-xs transition-all font-bold shadow-sm">
+                Exit Admin
+            </button>
+        </div>
     </div>
 
     <!-- Toast Notification Hub -->
     <div id="toastContainer" class="fixed top-6 right-6 z-50 flex flex-col gap-2 max-w-sm w-full"></div>
 
-    <!-- Joint Evaluation Header (Clean white header matching website with dynamic date pickers) -->
+    <!-- Joint Evaluation Header -->
     <header class="bg-white border-b border-slate-200 py-6 px-6 md:px-12 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-            <div>
-                <div class="flex items-center gap-2.5">
-                    <span class="bg-[#FDB813]/10 text-[#E09F00] border border-[#FDB813]/25 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                        Joint Evaluation Portal
-                    </span>
-                    <span id="adminBadge" class="hidden bg-[#1E252D] text-[#FDB813] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                        Texada Admin Mode
-                    </span>
+        <div class="max-w-4xl mx-auto flex flex-col gap-5">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                <div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="bg-[#FDB813]/10 text-[#E09F00] border border-[#FDB813]/25 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                            Joint Evaluation Portal
+                        </span>
+                        <span id="adminBadge" class="hidden bg-[#1E252D] text-[#FDB813] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                            Texada Admin Mode
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2.5 mt-3">
+                        <span class="text-[#FDB813] font-black text-xl">▶</span>
+                        <h1 class="text-2xl md:text-3xl font-black text-[#1E252D] tracking-tight uppercase">TEXADA EVALUATION PLAN</h1>
+                    </div>
+                    <p id="headerSubtitle" class="text-slate-500 text-sm mt-1">Co-developed timeline mapping for Acme Corp & Partners</p>
                 </div>
-                <!-- Visual branding header mapping the logo format in image_f2d006.png -->
-                <div class="flex items-center gap-2.5 mt-3">
-                    <span class="text-[#FDB813] font-black text-xl">▶</span>
-                    <h1 class="text-2xl md:text-3xl font-black text-[#1E252D] tracking-tight uppercase">TEXADA EVALUATION PLAN</h1>
+                
+                <div id="headerDatePickers" class="hidden flex flex-wrap gap-4 bg-[#F8FAFC] p-4 rounded-2xl border border-slate-200 w-full sm:w-auto">
+                    <div class="flex-1 min-w-[140px]">
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Discovery Date</label>
+                        <input type="date" id="headerDiscoveryInput" onchange="updateDiscoveryDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] focus:border-transparent w-full">
+                    </div>
+                    <div class="flex-1 min-w-[140px]">
+                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Target Go-Live</label>
+                        <input type="date" id="headerGoLiveInput" onchange="updateGoLiveDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] focus:border-transparent w-full">
+                    </div>
                 </div>
-                <p class="text-slate-500 text-sm mt-1">Co-developed timeline mapping for Acme Corp & Partners</p>
             </div>
-            
-            <!-- Dynamic Pickers shown in header when timeline is active -->
-            <div id="headerDatePickers" class="hidden flex flex-wrap gap-4 bg-[#F8FAFC] p-4 rounded-2xl border border-slate-200 w-full sm:w-auto">
-                <div class="flex-1 min-w-[140px]">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Discovery Date</label>
-                    <input type="date" id="headerDiscoveryInput" onchange="updateDiscoveryDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] focus:border-transparent w-full">
-                </div>
-                <div class="flex-1 min-w-[140px]">
-                    <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Target Go-Live</label>
-                    <input type="date" id="headerGoLiveInput" onchange="updateGoLiveDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] focus:border-transparent w-full">
-                </div>
+
+            <div class="flex border-b border-slate-200 gap-1 text-sm font-bold">
+                <button id="tabTimelineBtn" onclick="switchTab('timeline')" class="pb-3 px-4 border-b-2 border-[#FDB813] text-[#1E252D] transition-all flex items-center gap-2 focus:outline-none">
+                    Plan Timeline
+                </button>
+                <button id="tabRoiBtn" onclick="switchTab('roi')" class="pb-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-[#1E252D] transition-all flex items-center gap-2 focus:outline-none">
+                    Business ROI Calculator
+                </button>
             </div>
         </div>
     </header>
 
     <!-- Main Content Area -->
-    <main class="max-w-4xl mx-auto px-4 md:px-12 py-8 flex-grow w-full space-y-8">
+    <main class="max-w-4xl mx-auto px-4 md:px-12 py-8 flex-grow w-full">
         
-        <!-- INITIAL EMPTY STATE PANEL -->
-        <div id="emptyStatePanel" class="bg-white border border-slate-200 rounded-3xl p-8 md:p-12 text-center space-y-8 shadow-sm">
-            <div class="max-w-md mx-auto space-y-2">
-                <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight">Set Plan Baseline Coordinates</h2>
-                <p class="text-sm text-slate-500 leading-relaxed">
-                    Provide the initial Discovery engagement date and your Target Go-Live to construct the backward-calculated implementation roadmap.
-                </p>
-            </div>
-
-            <!-- Two-Field Interactive Form -->
-            <div class="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 text-left bg-[#F8FAFC] p-6 rounded-2xl border border-slate-200">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Discovery Call Date</label>
-                    <input type="date" id="initDiscoveryInput" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+        <!-- TIMELINE TAB CONTENT WRAPPER -->
+        <div id="timelineContentWrapper" class="space-y-8">
+            <!-- INITIAL EMPTY STATE PANEL -->
+            <div id="emptyStatePanel" class="bg-white border border-slate-200 rounded-3xl p-8 md:p-12 text-center space-y-8 shadow-sm">
+                <div class="max-w-md mx-auto space-y-2">
+                    <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight">Set Plan Baseline Coordinates</h2>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Provide the prospect company name, Discovery engagement date, and Target Go-Live to construct the backward-calculated implementation roadmap.
+                    </p>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Target Go-Live Date</label>
-                    <input type="date" id="initGoLiveInput" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
-                </div>
-                <div class="sm:col-span-2 pt-2">
-                    <button onclick="submitBaselineDates()" class="w-full bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] font-black py-3.5 px-6 rounded-xl text-sm transition-all shadow-md shadow-[#FDB813]/10">
-                        Generate Mutual Action Plan
-                    </button>
-                </div>
-            </div>
-        </div>
 
-        <!-- TIMELINE CONTENTS (Hidden when state is empty) -->
-        <div id="timelineWorkspace" class="hidden space-y-8">
-
-            <!-- Real-time Metrics & KPIs Banner -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white border border-slate-200/80 p-5 rounded-3xl shadow-sm">
-                <div class="space-y-1 p-2">
-                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Launch Countdown</span>
-                    <div class="flex items-baseline gap-1">
-                        <span id="metricCountdown" class="text-xl md:text-2xl font-black text-[#1E252D]">--</span>
-                        <span class="text-xs text-slate-500 font-bold">days</span>
+                <!-- Three-Field Interactive Setup Form -->
+                <div class="max-w-md mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 text-left bg-[#F8FAFC] p-6 rounded-2xl border border-slate-200">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Company Name (Prospect)</label>
+                        <input type="text" id="initCompanyNameInput" placeholder="e.g., Acme Corporation" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
                     </div>
-                </div>
-                <div class="space-y-1 p-2 border-l-0 sm:border-l border-slate-150">
-                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Overall Progress</span>
-                    <div class="flex items-center gap-2">
-                        <span id="metricProgress" class="text-xl md:text-2xl font-black text-emerald-600">0%</span>
-                        <span class="text-[10px] text-slate-500 font-semibold inline" id="metricTaskCount">(0/0 done)</span>
-                    </div>
-                </div>
-                <div class="space-y-1 p-2 border-l-0 sm:border-l border-slate-150">
-                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Feasibility Risk</span>
-                    <span id="metricRisk" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 uppercase tracking-wide">Calculable</span>
-                </div>
-            </div>
-            
-            <!-- Reality Check Alert -->
-            <div id="realityCheckAlert" class="hidden bg-rose-50 border border-rose-200 p-5 rounded-2xl flex items-start gap-4 shadow-sm">
-                <span class="text-2xl mt-0.5">⚠️</span>
-                <div>
-                    <h4 class="text-rose-900 font-extrabold text-sm md:text-base">Desired Launch Target Requires Shift</h4>
-                    <p class="text-rose-700 text-xs md:text-sm mt-0.5" id="realityCheckMessage"></p>
-                </div>
-            </div>
-
-            <!-- Horizontal Summary Infographic Overview -->
-            <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
-                <div class="flex justify-between items-center pb-2 border-b border-slate-100">
                     <div>
-                        <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Roadmap Overview</h3>
-                        <p class="text-[11px] text-slate-500">Proportionally scaled chronological bird's-eye view. Click nodes to jump to details.</p>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Discovery Call Date</label>
+                        <input type="date" id="initDiscoveryInput" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
                     </div>
-                    <div class="flex gap-4 text-[10px] font-bold text-slate-400">
-                        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> Completed</span>
-                        <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span> In Progress</span>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Target Go-Live Date</label>
+                        <input type="date" id="initGoLiveInput" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                    </div>
+                    <div class="sm:col-span-2 pt-2">
+                        <button onclick="submitBaselineDates()" class="w-full bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] font-black py-3.5 px-6 rounded-xl text-sm transition-all shadow-md shadow-[#FDB813]/10">
+                            Generate Mutual Action Plan
+                        </button>
                     </div>
                 </div>
 
-                <!-- Scrollable wrapper resolving the coordinate alignment drift -->
-                <div class="overflow-x-auto w-full">
-                    <div class="relative py-16 px-6 min-w-[650px] min-h-[170px]">
-                        <!-- Underlay Track Line (Gold/Yellow track indicator) -->
-                        <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[#FDB813] via-slate-200 to-slate-100 rounded-full"></div>
-                        
-                        <!-- Dynamic Node Track containing coordinates aligned 1-to-1 with "Today" line -->
-                        <div id="horizontalSummaryTrack" class="absolute inset-x-6 top-0 bottom-0">
-                            <!-- Nodes are injected here dynamically -->
+                <!-- Database Setup Troubleshooting Guide -->
+                <div id="setupHelpBox" class="hidden text-left bg-amber-50 border border-amber-200 rounded-2xl p-5 max-w-md mx-auto text-xs space-y-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">💡</span>
+                        <h4 class="font-extrabold text-amber-900 uppercase tracking-wide">First-Time Setup Action Required</h4>
+                    </div>
+                    <p class="text-amber-800 leading-relaxed">
+                        To activate Supabase persistence, copy and paste this script into your **Supabase SQL Editor** to construct your schema:
+                    </p>
+                    <pre class="bg-[#1E252D] text-amber-300 p-3 rounded-lg overflow-x-auto text-[10px] font-mono leading-relaxed select-all">
+CREATE TABLE evaluations (
+  id TEXT PRIMARY KEY,
+  prospect_name TEXT NOT NULL,
+  discovery_date DATE,
+  go_live_date DATE,
+  custom_milestones JSONB DEFAULT '[]'::JSONB,
+  anchor_overrides JSONB DEFAULT '{}'::JSONB,
+  anchor_statuses JSONB DEFAULT '{}'::JSONB,
+  roi JSONB DEFAULT '{}'::JSONB,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
+                    <p class="text-[10px] text-amber-700 italic">
+                        Once created, reload your preview window. We are currently saving progress locally via sandbox browser storage.
+                    </p>
+                </div>
+            </div>
+
+            <!-- TIMELINE WORKSPACE -->
+            <div id="timelineWorkspace" class="hidden space-y-8">
+
+                <!-- Real-time Metrics & KPIs Banner -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white border border-slate-200/80 p-5 rounded-3xl shadow-sm">
+                    <div class="space-y-1 p-2">
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Launch Countdown</span>
+                        <div class="flex items-baseline gap-1">
+                            <span id="metricCountdown" class="text-xl md:text-2xl font-black text-[#1E252D]">--</span>
+                            <span class="text-xs text-slate-500 font-bold">days</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1 p-2 border-l-0 sm:border-l border-slate-150">
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Overall Progress</span>
+                        <div class="flex items-center gap-2">
+                            <span id="metricProgress" class="text-xl md:text-2xl font-black text-emerald-600">0%</span>
+                            <span class="text-[10px] text-slate-500 font-semibold inline" id="metricTaskCount">(0/0 done)</span>
+                        </div>
+                    </div>
+                    <div class="space-y-1 p-2 border-l-0 sm:border-l border-slate-150">
+                        <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Feasibility Risk</span>
+                        <span id="metricRisk" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 uppercase tracking-wide">Calculable</span>
+                    </div>
+                </div>
+                
+                <!-- Reality Check Alert -->
+                <div id="realityCheckAlert" class="hidden bg-rose-50 border border-rose-200 p-5 rounded-2xl flex items-start gap-4 shadow-sm">
+                    <span class="text-2xl mt-0.5">⚠️</span>
+                    <div>
+                        <h4 class="text-rose-900 font-extrabold text-sm md:text-base">Desired Launch Target Requires Shift</h4>
+                        <p class="text-rose-700 text-xs md:text-sm mt-0.5" id="realityCheckMessage"></p>
+                    </div>
+                </div>
+
+                <!-- Horizontal Summary Infographic Overview -->
+                <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
+                    <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                        <div>
+                            <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Roadmap Overview</h3>
+                            <p class="text-[11px] text-slate-500">Proportionally scaled chronological bird's-eye view. Click nodes to jump to details.</p>
+                        </div>
+                        <div class="flex gap-4 text-[10px] font-bold text-slate-400">
+                            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> Completed</span>
+                            <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span> In Progress</span>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable wrapper resolving the coordinate alignment drift -->
+                    <div class="overflow-x-auto w-full">
+                        <div class="relative py-16 px-6 min-w-[650px] min-h-[170px]">
+                            <!-- Underlay Track Line -->
+                            <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[#FDB813] via-slate-200 to-slate-100 rounded-full"></div>
                             
-                            <!-- Dynamic "Today" Indicator Line with "Today" label styled exactly as shown in image_f2d006.png -->
-                            <!-- Starts at top-8 to protect the absolute pill top coordinate from getting clipped by wrapper overflow-x bounds -->
-                            <div id="horizontalTodayLine" class="absolute top-8 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none hidden transition-all duration-350">
-                                <!-- Capsule button wrapper with tiny live amber badge at top of the bar -->
-                                <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1E252D] text-[#FDB813] text-[10px] font-black tracking-widest uppercase px-3.5 py-1.5 rounded-full shadow-lg whitespace-nowrap flex items-center gap-1.5 border border-[#FDB813]/20">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-[#FDB813] animate-pulse"></span>
-                                    Today
+                            <!-- Dynamic Node Track -->
+                            <div id="horizontalSummaryTrack" class="absolute inset-x-6 top-0 bottom-0">
+                                <!-- Nodes are injected here dynamically -->
+                                
+                                <!-- Dynamic "Today" Indicator Line -->
+                                <div id="horizontalTodayLine" class="absolute top-8 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none hidden transition-all duration-350">
+                                    <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1E252D] text-[#FDB813] text-[10px] font-black tracking-widest uppercase px-3.5 py-1.5 rounded-full shadow-lg whitespace-nowrap flex items-center gap-1.5 border border-[#FDB813]/20">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-[#FDB813] animate-pulse"></span>
+                                        Today
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Vertical Infographic Timeline Card -->
-            <div class="bg-white p-6 md:p-10 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
-                <div class="flex justify-between items-center pb-6 border-b border-slate-100 flex-wrap gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-[#1E252D] tracking-tight">Timeline Milestone Map</h2>
-                        <p class="text-sm text-slate-500">Vertically stacked stages ordered chronologically.</p>
+                <!-- Vertical Infographic Timeline Card -->
+                <div class="bg-white p-6 md:p-10 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
+                    <div class="flex justify-between items-center pb-6 border-b border-slate-100 flex-wrap gap-4">
+                        <div>
+                            <h2 class="text-xl font-bold text-[#1E252D] tracking-tight">Timeline Milestone Map</h2>
+                            <p class="text-sm text-slate-500">Vertically stacked stages ordered chronologically.</p>
+                        </div>
+                        
+                        <!-- Add Custom Milestone Button -->
+                        <button id="addMilestoneBtn" onclick="openMilestoneModal()" class="hidden bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] text-xs md:text-sm font-black py-2.5 px-5 rounded-xl shadow-md transition-all">
+                            + Add Milestone
+                        </button>
                     </div>
-                    
-                    <!-- Add Custom Milestone Button (Admin Only) -->
-                    <button id="addMilestoneBtn" onclick="openMilestoneModal()" class="hidden bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] text-xs md:text-sm font-black py-2.5 px-5 rounded-xl shadow-md transition-all">
-                        + Add Milestone
-                    </button>
+
+                    <div class="relative py-4">
+                        <!-- Vertical Line Track -->
+                        <div class="absolute left-6 top-6 bottom-6 w-0.5 bg-slate-200/80"></div>
+                        
+                        <!-- Milestone Cards Container -->
+                        <div class="space-y-4" id="timelineContainer">
+                            <!-- Cards are dynamically rendered and injected here -->
+                        </div>
+                    </div>
                 </div>
 
-                <div class="relative py-4">
-                    <!-- Vertical Line Track -->
-                    <div class="absolute left-6 top-6 bottom-6 w-0.5 bg-slate-200/80"></div>
-                    
-                    <!-- Milestone Cards Container -->
-                    <div class="space-y-4" id="timelineContainer">
-                        <!-- Cards are dynamically rendered and injected here -->
-                    </div>
-                </div>
             </div>
-
         </div>
+
+        <!-- ROI TAB CONTENT WRAPPER -->
+        <div id="roiContentWrapper" class="hidden space-y-8 font-montserrat">
+            <div class="flex flex-col lg:flex-row justify-between items-center bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm gap-8">
+                <div class="flex flex-col items-center lg:items-start">
+                    <p class="text-slate-900 text-lg font-black uppercase tracking-tight text-center lg:text-left max-w-sm leading-tight">
+                        Texada’s Equipment Rental Management Software - ROI Calculator
+                    </p>
+                    <p class="text-slate-500 text-xs mt-1 text-center lg:text-left">Quantify your annual operational savings and productivity gains instantly.</p>
+                </div>
+                
+                <div class="text-center lg:text-right bg-slate-50 p-6 rounded-2xl w-full lg:w-auto border border-slate-200/60 shadow-inner">
+                    <p class="text-[#E09F00] text-[11px] font-black uppercase tracking-[0.2em] mb-1">Total Projected Annual Value</p>
+                    <div id="roi-total-val" class="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 leading-none count-up">0</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+                <div class="lg:col-span-5 flex flex-col gap-6">
+                    <div class="bg-white border border-slate-250/80 rounded-2xl p-6 md:p-8 shadow-sm">
+                        <div class="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
+                            <h3 class="text-slate-900 text-[12px] font-black uppercase tracking-widest">Fleet Discovery</h3>
+                            <button id="reset-btn" type="button" class="text-[10px] font-bold text-slate-400 hover:text-yellow-600 uppercase tracking-tight transition-colors px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md hover:border-yellow-300 shadow-sm">Clear Form</button>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div class="pb-4 border-b border-slate-200 space-y-4">
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Financial Baseline</h4>
+                                <div class="space-y-3">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1">
+                                            <label for="oec" class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight block">Total Fleet OEC ($)</label>
+                                            <div class="field-tooltip-wrapper">
+                                                <svg class="w-3 h-3 text-slate-400 cursor-help" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                                                <div class="field-tooltip">Original Equipment Cost: The total purchase price of all active assets in your rental fleet.</div>
+                                            </div>
+                                        </div>
+                                        <input type="text" id="oec" placeholder="Enter Amount" class="input-box shadow-sm border-slate-300 !text-left px-4 currency-input">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1">
+                                            <label for="annual-rev" class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight block">Annual Rental Revenue ($)</label>
+                                            <div class="field-tooltip-wrapper">
+                                                <svg class="w-3 h-3 text-slate-400 cursor-help" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                                                <div class="field-tooltip">Total gross revenue generated specifically from equipment rentals over the last 12 months.</div>
+                                            </div>
+                                        </div>
+                                        <input type="text" id="annual-rev" placeholder="Enter Amount" class="input-box shadow-sm border-slate-300 !text-left px-4 currency-input">
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1">
+                                            <label for="m-spend" class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight block">Annual Maintenance Spend ($)</label>
+                                            <div class="field-tooltip-wrapper">
+                                                <svg class="w-3 h-3 text-slate-400 cursor-help" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                                                <div class="field-tooltip">Total annual cost for parts and labor to maintain the fleet. Auto-calculates to 5% of OEC by default.</div>
+                                            </div>
+                                        </div>
+                                        <input type="text" id="m-spend" placeholder="Auto-calculates 5% of OEC" class="input-box shadow-sm border-slate-300 !text-left px-4 currency-input">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-4 text-[10px] uppercase font-black text-slate-400 pt-2">
+                                <div class="col-span-1">Performance Metric</div>
+                                <div class="text-center">Current</div>
+                                <div class="text-center">Target</div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-4 items-center">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Dollar Ute %</span>
+                                </div>
+                                <input type="text" id="dollar-curr" class="input-box shadow-sm bg-slate-100/50" readonly>
+                                <input type="number" id="dollar-target" placeholder="Target %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30">
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-200 space-y-4">
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Damage and Fuel Recovery</h4>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Fuel Recovery</p>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4 items-center">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Fuel Expense</span>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <input type="text" id="fuel-expense" placeholder="Annual Expense" class="input-box shadow-sm border-slate-300 !text-left px-4 currency-input">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight leading-tight self-center">% Recovered</span>
+                                        </div>
+                                        <input type="number" id="fuel-percent-curr" placeholder="Current %" class="input-box shadow-sm h-10 text-xs">
+                                        <div class="flex flex-col items-center">
+                                            <input type="number" id="fuel-percent-gain" value="15" placeholder="Gain %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
+                                            <span class="text-[9px] font-bold text-slate-750 uppercase tracking-tighter mt-1">% Gain</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="space-y-3 pt-3 border-t border-slate-100">
+                                    <div class="flex justify-between items-center">
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Damage Recovery</p>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4 items-center">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Monthly Returns</span>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <input type="number" id="returns-month" placeholder="Count" class="input-box shadow-sm border-slate-300 !text-left px-4">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-slate-200 space-y-6">
+                                <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Labor Productivity Recovery</h4>
+                                <div class="space-y-3">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Accounting & Billing</p>
+                                    <div class="grid grid-cols-3 gap-4 items-center">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Staff Count</span>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <input type="number" id="staff-acc-count" placeholder="Count" class="input-box shadow-sm border-slate-300 !text-left px-4">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight leading-tight self-center">Hrs / Wk</span>
+                                        </div>
+                                        <input type="number" id="staff-acc-hours-curr" placeholder="Hrs" class="input-box shadow-sm h-10 text-xs">
+                                        <div class="flex flex-col items-center">
+                                            <input type="number" id="staff-acc-efficiency" value="50" placeholder="Gain %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
+                                            <span class="text-[9px] font-bold text-slate-750 uppercase tracking-tighter mt-1">% Gain</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3 pt-4 border-t border-slate-100">
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Shop Productivity</p>
+                                    <div class="grid grid-cols-3 gap-4 items-center">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Tech Count</span>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <input type="number" id="staff-serv-count" placeholder="Count" class="input-box shadow-sm border-slate-300 !text-left px-4">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight leading-tight self-center">Billing Rate</span>
+                                        </div>
+                                        <input type="number" id="staff-serv-bill-rate" placeholder="Rate" class="input-box shadow-sm h-10 text-xs">
+                                        <div class="flex flex-col items-center">
+                                            <input type="number" id="staff-serv-daily-reclaim" value="30" placeholder="Min" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
+                                            <span class="text-[8px] font-bold text-slate-750 uppercase tracking-tighter mt-1">Min/Day</span>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-4 items-center">
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Recovery %</span>
+                                        </div>
+                                        <div class="col-span-2">
+                                            <input type="number" id="staff-serv-recovery" value="75" placeholder="Recovery %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 px-4">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Results Panel -->
+                <div class="lg:col-span-7 flex flex-col gap-4">
+                    <div class="result-item group">
+                        <div class="tooltip">
+                            <h5 class="text-[#facc15] text-xs font-black uppercase tracking-widest mb-3">Drivers of Revenue Growth</h5>
+                            <ul class="text-[11px] text-slate-400 space-y-3 list-none">
+                                <li class="flex items-start gap-2 border-b border-slate-800 pb-2">
+                                    <span class="text-[#FDB813] mt-1">●</span>
+                                    <span><strong class="text-white">Compounded UTE:</strong> Financial yield lift combined with raw availability metrics.</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="flex gap-4 items-center">
+                            <div class="p-3 bg-yellow-50 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E09F00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-slate-900 text-xs font-black uppercase tracking-widest">Revenue Growth</h4>
+                                <p class="text-slate-400 text-[10px] font-bold mt-0.5 uppercase tracking-tight">Utilization Lift</p>
+                            </div>
+                        </div>
+                        <div id="roi-res-dollar" class="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">0</div>
+                    </div>
+
+                    <div class="result-item group">
+                        <div class="tooltip">
+                            <h5 class="text-[#facc15] text-xs font-black uppercase tracking-widest mb-3">Stopped Leakage & Damage Recovery</h5>
+                        </div>
+                        <div class="flex gap-4 items-center">
+                            <div class="p-3 bg-yellow-50 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E09F00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-slate-900 text-xs font-black uppercase tracking-widest">Revenue Recovery</h4>
+                                <p class="text-slate-400 text-[10px] font-bold mt-0.5 uppercase tracking-tight">Fuel & Leakage Capture</p>
+                            </div>
+                        </div>
+                        <div id="roi-res-recovery" class="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">0</div>
+                    </div>
+
+                    <div class="result-item group">
+                        <div class="tooltip">
+                            <h5 class="text-[#facc15] text-xs font-black uppercase tracking-widest mb-3">Eliminating the "Manual Entry Tax"</h5>
+                        </div>
+                        <div class="flex gap-4 items-center">
+                            <div class="p-3 bg-yellow-50 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E09F00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-slate-900 text-xs font-black uppercase tracking-widest">Labor Productivity</h4>
+                                <p class="text-slate-400 text-[10px] font-bold mt-0.5 uppercase tracking-tight">Billing & Admin Capacity</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div id="roi-res-admin-val" class="text-2xl md:text-4xl font-black text-[#1E252D] tracking-tighter">0</div>
+                            <div id="roi-res-admin-hrs" class="text-[11px] font-bold text-slate-400 uppercase tracking-tight">0 Hrs Reclaimed</div>
+                        </div>
+                    </div>
+
+                    <div class="result-item group">
+                        <div class="tooltip">
+                            <h5 class="text-[#facc15] text-xs font-black uppercase tracking-widest mb-3">Shop Productivity Metrics</h5>
+                        </div>
+                        <div class="flex gap-4 items-center">
+                            <div class="p-3 bg-yellow-50 rounded-lg">
+                                <svg class="w-6 h-6 text-[#E09F00]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-slate-900 text-xs font-black uppercase tracking-widest">Shop Productivity</h4>
+                                <p class="text-slate-400 text-[10px] font-bold mt-0.5 uppercase tracking-tight">Additional Billable Work</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div id="roi-res-shop-val" class="text-3xl md:text-5xl font-black text-[#1E252D] tracking-tighter">0</div>
+                            <div id="roi-res-shop-hrs" class="text-[11px] font-bold text-slate-400 uppercase tracking-tight">0 Hrs Reclaimed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
-    <!-- Clean Project footer -->
     <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 mt-auto">
-        <p>Mutual Action Plan Workspace • Dynamic Seller Admin Controls Included</p>
+        <p>© 2026 Texada Software • Evaluation MAP Workspace</p>
     </footer>
 
-    <!-- Add/Edit Custom Milestone Modal -->
+    <!-- Milestone Modal -->
     <div id="milestoneModal" class="hidden fixed inset-0 bg-[#12161A]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-200">
         <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl border border-slate-200 space-y-4">
             <div class="flex justify-between items-center">
                 <h3 id="modalTitle" class="text-base font-bold text-[#1E252D]">Add Custom Milestone</h3>
                 <button onclick="closeMilestoneModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
             </div>
-            
             <input type="hidden" id="modalId">
-
             <div class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Milestone Title</label>
-                    <input type="text" id="modalName" placeholder="e.g., Security & Compliance Review" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                    <input type="text" id="modalName" placeholder="e.g., Security Review" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#FDB813]">
                 </div>
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-xs font-bold text-slate-500 uppercase">Target Milestone Date</label>
+                        <label class="block text-xs font-bold text-slate-500 uppercase">Target Date</label>
                         <span id="dateLockBadge" class="hidden text-[9px] bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded font-bold uppercase tracking-wider">Dynamic Anchor (Locked)</span>
                     </div>
-                    <input type="date" id="modalDate" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813] disabled:bg-slate-100 disabled:text-slate-400">
+                    <input type="date" id="modalDate" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#FDB813] disabled:bg-slate-100 disabled:text-slate-400">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Owner Assignment</label>
-                    <input type="text" id="modalOwner" placeholder="e.g., Acme Security / Seller Lead" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                    <input type="text" id="modalOwner" placeholder="e.g., Acme Lead" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#FDB813]">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Initial Status</label>
-                    <select id="modalStatus" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                    <select id="modalStatus" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#FDB813]">
                         <option value="Pending">Pending</option>
                         <option value="In Progress">In Progress</option>
                         <option value="Completed">Completed</option>
@@ -248,7 +679,6 @@
                     </select>
                 </div>
             </div>
-            
             <div class="pt-2 flex justify-end gap-3">
                 <button onclick="closeMilestoneModal()" class="px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors">Cancel</button>
                 <button onclick="saveCustomMilestone()" class="px-5 py-2 text-sm font-semibold bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] rounded-xl shadow-lg transition-colors">Save Milestone</button>
@@ -256,100 +686,53 @@
         </div>
     </div>
 
-    <!-- Floating Action Trigger: Toggle Admin Mode -->
-    <button onclick="toggleAdmin(null)" class="fixed bottom-6 right-6 bg-[#1E252D] hover:bg-slate-800 text-white p-3.5 rounded-full shadow-xl transition-all duration-300 z-50 border border-[#FDB813]/25 flex items-center gap-2 text-xs font-bold group" title="Texada Admin Mode">
+    <!-- Floating Toggle Trigger -->
+    <button onclick="toggleAdmin(null)" class="fixed bottom-6 right-6 bg-[#1E252D] hover:bg-slate-800 text-white p-3.5 rounded-full shadow-xl transition-all duration-300 z-50 border border-[#FDB813]/25 flex items-center gap-2 text-xs font-bold group">
         <span class="text-[#FDB813] group-hover:rotate-45 duration-300 transform inline-block">⚙️</span>
         <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-350 ease-in-out whitespace-nowrap">Texada Admin Mode</span>
     </button>
 
-    <!-- Interactive Engine Scripts -->
     <script>
+        // ----------------──────────────
+        // STEP 3: DATABASE CONFIGURATION
+        // ----------------──────────────
+        const SUPABASE_URL = "https://lufzkqlpmyzhaovldxjx.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1ZnprcWxwbXl6aGFvdmxkeGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMTg0NDIsImV4cCI6MjA5OTc5NDQ0Mn0.isbnVteRQrd6CHEJrWoCDYncQT8jYQgo8-UvLf7hdls";     
+        
+        let supabaseInstance = null;
+        let currentProspectId = "";
+
+        // Establish safe connection if parameters are modified
+        if (SUPABASE_URL.indexOf("your-project-id") === -1 && typeof supabase !== 'undefined') {
+            supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
         let state = {
-            goLiveDate: "", // Always starts empty on fresh load
-            discoveryDate: "", // Always starts empty on fresh load
+            prospectName: "",
+            goLiveDate: "", 
+            discoveryDate: "", 
             customMilestones: [],
-            anchorOverrides: {}, // Stores customized title and owners for core milestones
+            anchorOverrides: {}, 
             anchorStatuses: {
-                'anchor-discovery': 'Completed', // Discovery typically completed at start of workspace creation
+                'anchor-discovery': 'Completed',
                 'anchor-signature': 'Pending',
                 'anchor-kickoff': 'Pending',
                 'anchor-golive': 'Pending'
             },
-            isAdmin: false
+            isAdmin: false,
+            activeTab: 'timeline',
+            roi: {
+                oec: "", annualRev: "", mSpend: "", dollarTarget: "", fuelExpense: "",
+                fuelPercentCurr: "", fuelPercentGain: "15", returnsMonth: "", staffAccCount: "",
+                staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
+                staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
+            }
         };
 
-        // Date reference for 2026 execution matching screenshot specs
-        const CURRENT_DATE_STR = "2026-07-16";
-
-        // Load state but enforce true empty parameters on first build
-        function loadState() {
-            const savedState = localStorage.getItem('dsr_timeline_blueprint_v3');
-            if (savedState) {
-                state = JSON.parse(savedState);
-                if (!state.anchorOverrides) state.anchorOverrides = {};
-                if (!state.anchorStatuses) {
-                    state.anchorStatuses = {
-                        'anchor-discovery': 'Completed',
-                        'anchor-signature': 'Pending',
-                        'anchor-kickoff': 'Pending',
-                        'anchor-golive': 'Pending'
-                    };
-                }
-            } else {
-                state.goLiveDate = "";
-                state.discoveryDate = "";
-                state.customMilestones = [];
-                state.anchorOverrides = {};
-                state.anchorStatuses = {
-                    'anchor-discovery': 'Completed',
-                    'anchor-signature': 'Pending',
-                    'anchor-kickoff': 'Pending',
-                    'anchor-golive': 'Pending'
-                };
-            }
-
-            // Read query params for Admin activation
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('admin') === 'true') {
-                state.isAdmin = true;
-            }
-        }
-
-        function saveState() {
-            localStorage.setItem('dsr_timeline_blueprint_v3', JSON.stringify(state));
-        }
-
-        // Calculate dynamic relative shifts
-        function getOffsetDate(baseDateStr, daysOffset) {
-            const date = new Date(baseDateStr + "T00:00:00");
-            date.setDate(date.getDate() + daysOffset);
-            return date.toISOString().split('T')[0];
-        }
-
-        function getOffsetMonths(baseDateStr, monthsOffset) {
-            const date = new Date(baseDateStr + "T00:00:00");
-            date.setMonth(date.getMonth() + monthsOffset);
-            return date.toISOString().split('T')[0];
-        }
-
-        function formatReadableDate(dateStr) {
-            if (!dateStr) return "TBD";
-            const options = { month: 'short', day: 'numeric', year: 'numeric' };
-            const date = new Date(dateStr + "T00:00:00");
-            return date.toLocaleDateString('en-US', options);
-        }
-
-        // Human readable date converter (Short)
-        function formatReadableDateShort(dateStr) {
-            if (!dateStr) return "TBD";
-            const options = { month: 'short', day: 'numeric' };
-            const date = new Date(dateStr + "T00:00:00");
-            return date.toLocaleDateString('en-US', options);
-        }
-
-        // Custom Toast center (Replaces annoying browser alerts)
+        // Explicitly defined and hoisted showToast function resolving ReferenceError
         function showToast(message, type = "success") {
             const container = document.getElementById('toastContainer');
+            if (!container) return;
             const toast = document.createElement('div');
             
             let bgClass = "bg-[#1E252D] border-slate-800 text-white shadow-xl";
@@ -377,43 +760,379 @@
             }, 4000);
         }
 
-        function toggleAdmin(forceState = null) {
-            state.isAdmin = forceState !== null ? forceState : !state.isAdmin;
-            
-            const banner = document.getElementById('adminBanner');
-            const badge = document.getElementById('adminBadge');
-            const addBtn = document.getElementById('addMilestoneBtn');
-            
-            if (state.isAdmin) {
-                banner.classList.remove('hidden');
-                badge.classList.remove('hidden');
-                addBtn.classList.remove('hidden');
-                showToast("Admin Controls Unlocked", "info");
-            } else {
-                banner.classList.add('hidden');
-                badge.classList.add('hidden');
-                addBtn.classList.add('hidden');
-                showToast("Read-Only Client Mode Active", "success");
-            }
-            renderTimeline();
+        function slugify(text) {
+            return text.toString().toLowerCase().trim()
+                .replace(/\s+/g, '-')           
+                .replace(/[^\w\-]+/g, '')       
+                .replace(/\-\-+/g, '-');        
         }
 
-        // Baseline Submit Form Handler
-        function submitBaselineDates() {
+        function createNewProspect() {
+            window.location.href = window.location.origin + window.location.pathname + '?admin=true';
+        }
+
+        function saveState() {
+            if (!supabaseInstance || !currentProspectId) {
+                localStorage.setItem('dsr_timeline_blueprint_v3', JSON.stringify(state));
+                return;
+            }
+
+            // Async Write back execution context loop to remote database row endpoints
+            supabaseInstance
+                .from('evaluations')
+                .upsert({
+                    id: currentProspectId,
+                    prospect_name: state.prospectName,
+                    discovery_date: state.discoveryDate,
+                    go_live_date: state.goLiveDate,
+                    custom_milestones: state.customMilestones,
+                    anchor_overrides: state.anchorOverrides,
+                    anchor_statuses: state.anchorStatuses,
+                    roi: state.roi,
+                    updated_at: new Date().toISOString()
+                })
+                .then(({ error }) => {
+                    if (error) {
+                        console.error("Database upsert failed:", error);
+                        if (error.code === 'PGRST205') {
+                            showToast("Database table error. Falling back to local storage.", "info");
+                        }
+                    }
+                });
+        }
+
+        function loadState() {
+            const urlParams = new URLSearchParams(window.location.search);
+            currentProspectId = urlParams.get('prospect');
+            
+            if (urlParams.get('admin') === 'true') {
+                state.isAdmin = true;
+            }
+
+            // Fallback strategy if page is loaded on basic route params
+            if (!supabaseInstance || !currentProspectId) {
+                const savedState = localStorage.getItem('dsr_timeline_blueprint_v3');
+                if (savedState) {
+                    state = JSON.parse(savedState);
+                }
+                switchTab(state.activeTab || 'timeline');
+                renderTimeline();
+                fillROIInputsFromState();
+                return;
+            }
+
+            // Remote load hydration execution thread with robust error boundary catching PGRST205 schema cache failures
+            supabaseInstance
+                .from('evaluations')
+                .select('*')
+                .eq('id', currentProspectId)
+                .single()
+                .then(({ data, error }) => {
+                    if (!error && data) {
+                        state.prospectName = data.prospect_name || "";
+                        state.discoveryDate = data.discovery_date || "";
+                        state.goLiveDate = data.go_live_date || "";
+                        state.customMilestones = data.custom_milestones || [];
+                        state.anchorOverrides = data.anchor_overrides || {};
+                        state.anchorStatuses = data.anchor_statuses || {};
+                        state.roi = data.roi || {};
+                    } else if (error) {
+                        console.warn("Supabase fetch failed (PGRST205 / Table Missing). Initiating Local Sandbox Fallback.", error);
+                        
+                        // Enable visual setup troubleshoot helper on screen
+                        const helpBox = document.getElementById('setupHelpBox');
+                        if (helpBox) helpBox.classList.remove('hidden');
+
+                        // Gracefully pull from localStorage sandbox instead
+                        const savedState = localStorage.getItem('dsr_timeline_blueprint_v3');
+                        if (savedState) {
+                            state = JSON.parse(savedState);
+                        }
+                    }
+                    switchTab(state.activeTab || 'timeline');
+                    renderTimeline();
+                    fillROIInputsFromState();
+                });
+        }
+
+        // Tab Visibility Switcher
+        function switchTab(tab) {
+            state.activeTab = tab;
+            const timelineBtn = document.getElementById('tabTimelineBtn');
+            const roiBtn = document.getElementById('tabRoiBtn');
+            const timelineWrapper = document.getElementById('timelineContentWrapper');
+            const roiWrapper = document.getElementById('roiContentWrapper');
+            const headerPickers = document.getElementById('headerDatePickers');
+
+            if (tab === 'roi') {
+                timelineBtn.classList.remove('border-[#FDB813]', 'text-[#1E252D]');
+                timelineBtn.classList.add('border-transparent', 'text-slate-400');
+                roiBtn.classList.remove('border-transparent', 'text-slate-400');
+                roiBtn.classList.add('border-[#FDB813]', 'text-[#1E252D]');
+                timelineWrapper.classList.add('hidden');
+                roiWrapper.classList.remove('hidden');
+                headerPickers.classList.add('hidden');
+                calculateROI();
+            } else {
+                roiBtn.classList.remove('border-[#FDB813]', 'text-[#1E252D]');
+                roiBtn.classList.add('border-transparent', 'text-slate-400');
+                timelineBtn.classList.remove('border-transparent', 'text-slate-400');
+                timelineBtn.classList.add('border-[#FDB813]', 'text-[#1E252D]');
+                roiWrapper.classList.add('hidden');
+                timelineWrapper.classList.remove('hidden');
+                if (state.goLiveDate && state.discoveryDate) {
+                    headerPickers.classList.remove('hidden');
+                }
+            }
+        }
+
+        // ROI Math and format utilities
+        const formatCurrency = (val) => {
+            if (val === "" || val === null || val === undefined) return "";
+            const num = parseFloat(val.toString().replace(/[^0-9.]/g, ''));
+            return isNaN(num) ? '' : new Intl.NumberFormat('en-US', { 
+                style: 'currency', currency: 'USD', maximumFractionDigits: 0 
+            }).format(num);
+        };
+
+        const getRawValue = (id) => {
+            const el = document.getElementById(id);
+            return el ? parseFloat(el.value.toString().replace(/[^0-9.]/g, '')) || 0 : 0;
+        };
+
+        const calculateROI = () => {
+            const oec = getRawValue('oec');
+            const rev = getRawValue('annual-rev');
+            const maint = getRawValue('m-spend');
+            const targetUte = parseFloat(document.getElementById('dollar-target').value) || 0;
+            const fuelExp = getRawValue('fuel-expense');
+            const fuelGainPercent = parseFloat(document.getElementById('fuel-percent-gain').value) || 0;
+            const monthlyReturns = parseFloat(document.getElementById('returns-month').value) || 0;
+            const accCount = parseFloat(document.getElementById('staff-acc-count').value) || 0;
+            const accHrs = parseFloat(document.getElementById('staff-acc-hours-curr').value) || 0;
+            const accGain = parseFloat(document.getElementById('staff-acc-efficiency').value) || 0;
+            const techCount = parseFloat(document.getElementById('staff-serv-count').value) || 0;
+            const techRate = parseFloat(document.getElementById('staff-serv-bill-rate').value) || 0;
+            const techReclaim = parseFloat(document.getElementById('staff-serv-daily-reclaim').value) || 0;
+            const techRecovery = parseFloat(document.getElementById('staff-serv-recovery').value) || 0;
+
+            const actualNet = Math.max(0, rev - maint);
+            const targetPotential = (targetUte / 100) * oec;
+            const revGain = Math.max(0, targetPotential - actualNet);
+            const fuelRecoveryVal = fuelExp * (fuelGainPercent / 100);
+            const damageRecoveryVal = (monthlyReturns * 12) * 0.025 * 1000;
+            const totalRecovery = fuelRecoveryVal + damageRecoveryVal;
+            const adminHrsReclaimed = accCount * accHrs * (accGain / 100) * 52;
+            const adminVal = adminHrsReclaimed * 35;
+            const shopHrsReclaimed = techCount * (techReclaim / 60) * 5 * 52;
+            const shopVal = shopHrsReclaimed * techRate * (techRecovery / 100);
+            const total = revGain + totalRecovery + adminVal + shopVal;
+
+            document.getElementById('roi-total-val').innerText = formatCurrency(total) || '0';
+            document.getElementById('roi-res-dollar').innerText = formatCurrency(revGain) || '0';
+            document.getElementById('roi-res-recovery').innerText = formatCurrency(totalRecovery) || '0';
+            document.getElementById('roi-res-admin-val').innerText = formatCurrency(adminVal) || '0';
+            document.getElementById('roi-res-admin-hrs').innerText = Math.round(adminHrsReclaimed).toLocaleString() + " Hrs Reclaimed";
+            document.getElementById('roi-res-shop-val').innerText = formatCurrency(shopVal) || '0';
+            document.getElementById('roi-res-shop-hrs').innerText = Math.round(shopHrsReclaimed).toLocaleString() + " Hrs Reclaimed";
+        };
+
+        const updateUte = () => {
+            const oec = getRawValue('oec');
+            const rev = getRawValue('annual-rev');
+            const maint = getRawValue('m-spend');
+            if (oec === 0 || rev === 0) {
+                document.getElementById('dollar-curr').value = "";
+                return;
+            }
+            const base = ((rev - maint) / oec) * 100;
+            const curr = base + 2.18;
+            document.getElementById('dollar-curr').value = curr.toFixed(2);
+            const targetEl = document.getElementById('dollar-target');
+            if (targetEl.dataset.isManual !== "true") {
+                targetEl.value = (curr + 5).toFixed(2);
+                state.roi.dollarTarget = (curr + 5).toFixed(2);
+            }
+        };
+
+        function fillROIInputsFromState() {
+            if (!state.roi) return;
+            const map = {
+                'oec': state.roi.oec, 'annual-rev': state.roi.annualRev, 'm-spend': state.roi.mSpend,
+                'dollar-target': state.roi.dollarTarget, 'fuel-expense': state.roi.fuelExpense,
+                'fuel-percent-curr': state.roi.fuelPercentCurr, 'fuel-percent-gain': state.roi.fuelPercentGain,
+                'returns-month': state.roi.returnsMonth, 'staff-acc-count': state.roi.staffAccCount,
+                'staff-acc-hours-curr': state.roi.staffAccHoursCurr, 'staff-acc-efficiency': state.roi.staffAccEfficiency,
+                'staff-serv-count': state.roi.staffServCount, 'staff-serv-bill-rate': state.roi.staffServBillRate,
+                'staff-serv-daily-reclaim': state.roi.staffServDailyReclaim, 'staff-serv-recovery': state.roi.staffServRecovery
+            };
+            Object.keys(map).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.value = map[id] || "";
+                    if (el.classList.contains('currency-input') && map[id]) {
+                        el.value = formatCurrency(map[id]);
+                    }
+                }
+            });
+        }
+
+        let isMaintManual = false;
+        function setupROIEventListeners() {
+            const maintInput = document.getElementById('m-spend');
+            const targetInput = document.getElementById('dollar-target');
+            maintInput.addEventListener('focus', () => { isMaintManual = true; });
+            targetInput.addEventListener('input', () => { targetInput.dataset.isManual = "true"; });
+
+            document.querySelectorAll('#roiContentWrapper input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const id = e.target.id;
+                    const val = e.target.value.replace(/[^0-9.]/g, '');
+                    if (id === 'oec' && !isMaintManual) {
+                        const oecVal = getRawValue('oec');
+                        const computedMaint = Math.round(oecVal * 0.05);
+                        maintInput.value = formatCurrency(computedMaint);
+                        state.roi.mSpend = computedMaint.toString();
+                    }
+                    const keyMap = {
+                        'oec': 'oec', 'annual-rev': 'annualRev', 'm-spend': 'mSpend', 'dollar-target': 'dollarTarget',
+                        'fuel-expense': 'fuelExpense', 'fuel-percent-curr': 'fuelPercentCurr', 'fuel-percent-gain': 'fuelPercentGain',
+                        'returns-month': 'returnsMonth', 'staff-acc-count': 'staffAccCount', 'staff-acc-hours-curr': 'staffAccHoursCurr',
+                        'staff-acc-efficiency': 'staffAccEfficiency', 'staff-serv-count': 'staffServCount', 'staff-serv-bill-rate': 'staffServBillRate',
+                        'staff-serv-daily-reclaim': 'staffServDailyReclaim', 'staff-serv-recovery': 'staffServRecovery'
+                    };
+                    if (keyMap[id]) state.roi[keyMap[id]] = val;
+                    if (id === 'oec' || id === 'annual-rev' || id === 'm-spend') updateUte();
+                    saveState();
+                    calculateROI();
+                });
+
+                if (input.classList.contains('currency-input')) {
+                    input.addEventListener('blur', (e) => {
+                        const formatted = formatCurrency(e.target.value);
+                        e.target.value = formatted;
+                        const stateKeyMap = { 'oec': 'oec', 'annual-rev': 'annualRev', 'm-spend': 'mSpend', 'fuel-expense': 'fuelExpense' };
+                        if (stateKeyMap[e.target.id]) state.roi[stateKeyMap[e.target.id]] = formatted.replace(/[^0-9.]/g, '');
+                        saveState();
+                    });
+                    input.addEventListener('focus', (e) => { e.target.value = e.target.value.replace(/[^0-9.]/g, ''); });
+                }
+            });
+
+            document.getElementById('reset-btn').onclick = () => {
+                isMaintManual = false;
+                targetInput.dataset.isManual = "false";
+                document.querySelectorAll('#roiContentWrapper input').forEach(i => {
+                    if (i.id === 'staff-acc-efficiency') i.value = "50";
+                    else if (i.id === 'staff-serv-daily-reclaim') i.value = "30";
+                    else if (i.id === 'staff-serv-recovery') i.value = "75";
+                    else if (i.id === 'fuel-percent-gain') i.value = "15";
+                    else i.value = "";
+                });
+                state.roi = {
+                    oec: "", annualRev: "", mSpend: "", dollarTarget: "", fuelExpense: "",
+                    fuelPercentCurr: "", fuelPercentGain: "15", returnsMonth: "", staffAccCount: "",
+                    staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
+                    staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
+                };
+                saveState();
+                calculateROI();
+            };
+        }
+
+        // Timeline Coordinates and engine calculations
+        function getOffsetDate(baseDateStr, daysOffset) {
+            const date = new Date(baseDateStr + "T00:00:00");
+            date.setDate(date.getDate() + daysOffset);
+            return date.toISOString().split('T')[0];
+        }
+
+        function getOffsetMonths(baseDateStr, monthsOffset) {
+            const date = new Date(baseDateStr + "T00:00:00");
+            date.setMonth(date.getMonth() + monthsOffset);
+            return date.toISOString().split('T')[0];
+        }
+
+        function formatReadableDate(dateStr) {
+            if (!dateStr) return "TBD";
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            return new Date(dateStr + "T00:00:00").toLocaleDateString('en-US', options);
+        }
+
+        function formatReadableDateShort(dateStr) {
+            if (!dateStr) return "TBD";
+            const options = { month: 'short', day: 'numeric' };
+            return new Date(dateStr + "T00:00:00").toLocaleDateString('en-US', options);
+        }
+
+        // Form submit handler that generates a clean slug and inserts into Supabase with try-catch safe blocks
+        async function submitBaselineDates() {
+            const companyName = document.getElementById('initCompanyNameInput').value.trim();
             const discVal = document.getElementById('initDiscoveryInput').value;
             const liveVal = document.getElementById('initGoLiveInput').value;
 
+            if (!companyName) {
+                showToast("Company Name is required to build a prospect portal.", "error");
+                return;
+            }
             if (!discVal || !liveVal) {
                 showToast("Both Discovery Date and Target Go-Live Date are required.", "error");
                 return;
             }
 
+            // Generate URL slug and append a small random block to prevent collisions
+            const slug = slugify(companyName) + '-' + Math.floor(1000 + Math.random() * 9000);
+
             state.discoveryDate = discVal;
             state.goLiveDate = liveVal;
-            
-            saveState();
-            renderTimeline();
-            showToast("Plan generated successfully!", "success");
+            state.prospectName = companyName;
+
+            if (supabaseInstance) {
+                try {
+                    const { error } = await supabaseInstance
+                        .from('evaluations')
+                        .insert({
+                            id: slug,
+                            prospect_name: companyName,
+                            discovery_date: discVal,
+                            go_live_date: liveVal,
+                            custom_milestones: state.customMilestones,
+                            anchor_overrides: state.anchorOverrides,
+                            anchor_statuses: state.anchorStatuses,
+                            roi: state.roi
+                        });
+
+                    if (error) throw error;
+
+                    showToast("Prospect portal successfully created in Supabase!", "success");
+                    
+                    // Redirect browser to the freshly created prospect page in admin mode
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
+                    }, 1000);
+
+                } catch (err) {
+                    console.error("Supabase creation failed:", err);
+                    
+                    // Show helpful troubleshoot tip
+                    const helpBox = document.getElementById('setupHelpBox');
+                    if (helpBox) helpBox.classList.remove('hidden');
+
+                    showToast("Database connection failed. Saving locally instead.", "error");
+                    
+                    // Local fallback save and reload
+                    currentProspectId = slug;
+                    saveState();
+                    setTimeout(() => {
+                        window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
+                    }, 1500);
+                }
+            } else {
+                // Local-only sandbox fallback
+                currentProspectId = slug;
+                saveState();
+                window.location.href = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
+            }
         }
 
         function updateDiscoveryDate(val) {
@@ -421,41 +1140,20 @@
             state.discoveryDate = val;
             saveState();
             renderTimeline();
-            showToast("Discovery date updated.", "success");
         }
 
-        // Dynamic update of Target Go-Live
         function updateGoLiveDate(val) {
             if (!val) return;
             state.goLiveDate = val;
             saveState();
             renderTimeline();
-            showToast("Target launch date recalculated.", "success");
         }
 
-        // Individual interactive status changes on milestones directly in workspace
-        function updateMilestoneStatus(id, newStatus) {
-            const isAnchor = id.startsWith('anchor-');
-            if (isAnchor) {
-                state.anchorStatuses[id] = newStatus;
-            } else {
-                const idx = state.customMilestones.findIndex(m => m.id === id);
-                if (idx !== -1) {
-                    state.customMilestones[idx].status = newStatus;
-                }
-            }
-            saveState();
-            renderTimeline();
-            showToast(`Status updated to "${newStatus}"`, "success");
-        }
-
-        // Main Chronological Timeline Mapping Logic
         function renderTimeline() {
             const emptyState = document.getElementById('emptyStatePanel');
             const workspace = document.getElementById('timelineWorkspace');
             const headerPickers = document.getElementById('headerDatePickers');
 
-            // Enforce blank state until both variables are set
             if (!state.goLiveDate || !state.discoveryDate) {
                 emptyState.classList.remove('hidden');
                 workspace.classList.add('hidden');
@@ -465,25 +1163,24 @@
 
             emptyState.classList.add('hidden');
             workspace.classList.remove('hidden');
-            headerPickers.classList.remove('hidden');
+            if (state.activeTab === 'timeline') headerPickers.classList.remove('hidden');
 
-            // Sync Header Inputs
             document.getElementById('headerDiscoveryInput').value = state.discoveryDate;
             document.getElementById('headerGoLiveInput').value = state.goLiveDate;
 
-            // Date mathematics for standard anchors
+            // Dynamically show the dynamic co-brand Company Name in the subheader matching image_f2d006.png structure
+            document.getElementById('headerSubtitle').innerHTML = state.prospectName ? `Co-developed timeline mapping for <strong>${state.prospectName}</strong>` : "Co-developed timeline mapping for Acme Corp & Partners";
+
             const goLive = state.goLiveDate;
             const kickOff = getOffsetMonths(goLive, -4); 
             const signature = getOffsetDate(kickOff, -35); 
             const discovery = state.discoveryDate;
 
-            // Compute Timeline Spacing Metrics for dashboard HUD
             const goLiveDateObj = new Date(goLive + "T00:00:00");
             const today = new Date(CURRENT_DATE_STR + "T00:00:00");
             const diffToGoLive = Math.ceil((goLiveDateObj - today) / (1000 * 60 * 60 * 24));
             document.getElementById('metricCountdown').innerText = diffToGoLive > 0 ? diffToGoLive : "0";
 
-            // Reality Check Warning Trigger
             const signatureDateObj = new Date(signature + "T00:00:00");
             const alertContainer = document.getElementById('realityCheckAlert');
             const alertMsg = document.getElementById('realityCheckMessage');
@@ -493,111 +1190,39 @@
                 riskRating = "CRITICAL";
                 const diffTime = Math.abs(today - signatureDateObj);
                 const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
-                alertMsg.innerHTML = `To achieve your requested Launch Target on <strong>${formatReadableDate(goLive)}</strong>, contract finalization needed to occur <strong>${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago</strong> (${formatReadableDate(signature)}). We recommend shifting the target date to ensure standard SLA delivery windows remain intact.`;
+                alertMsg.innerHTML = `To achieve your requested Launch Target on <strong>${formatReadableDate(goLive)}</strong>, contract finalization needed to occur <strong>${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago</strong> (${formatReadableDate(signature)}).`;
                 alertContainer.classList.remove('hidden');
             } else {
                 alertContainer.classList.add('hidden');
-                // Check if tight spacing exists
-                const diffSignatureDiscovery = Math.ceil((signatureDateObj - new Date(discovery + "T00:00:00")) / (1000 * 60 * 60 * 24));
-                if (diffSignatureDiscovery < 30) {
-                    riskRating = "COMPRESSED";
-                }
+                if (Math.ceil((signatureDateObj - new Date(discovery + "T00:00:00")) / (1000 * 60 * 60 * 24)) < 30) riskRating = "COMPRESSED";
             }
 
-            // Update KPI Dashboard Risk Pill
             const riskPill = document.getElementById('metricRisk');
             riskPill.innerText = riskRating;
-            if (riskRating === "CRITICAL") {
-                riskPill.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 uppercase tracking-wide";
-            } else if (riskRating === "COMPRESSED") {
-                riskPill.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 uppercase tracking-wide";
-            } else {
-                riskPill.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 uppercase tracking-wide";
-            }
+            riskPill.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${riskRating === 'CRITICAL' ? 'bg-rose-100 text-rose-800' : riskRating === 'COMPRESSED' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`;
 
-            // Build standard anchors with potential custom overrides
             const anchors = [
-                {
-                    id: 'anchor-discovery',
-                    title: state.anchorOverrides['anchor-discovery']?.title || 'Strategic Discovery Call',
-                    date: discovery,
-                    owner: state.anchorOverrides['anchor-discovery']?.owner || 'Acme Champion & Seller Team',
-                    isAnchor: true,
-                    type: 'discovery',
-                    status: state.anchorStatuses['anchor-discovery'] || 'Completed',
-                    icon: `<svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>`,
-                    colorTheme: 'from-white to-white border-slate-200 text-[#1E252D] border-l-4 border-l-slate-400',
-                    indicatorColor: 'bg-slate-400 ring-slate-100',
-                    shortName: 'Discovery'
-                },
-                {
-                    id: 'anchor-signature',
-                    title: state.anchorOverrides['anchor-signature']?.title || 'Contract Finalization & Signed',
-                    date: signature,
-                    owner: state.anchorOverrides['anchor-signature']?.owner || 'Legal & Executive Sponsors',
-                    isAnchor: true,
-                    type: 'contract',
-                    status: state.anchorStatuses['anchor-signature'] || 'Pending',
-                    icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`,
-                    colorTheme: 'from-white to-white border-slate-200 text-[#1E252D] border-l-4 border-l-[#FDB813]',
-                    indicatorColor: 'bg-[#FDB813] ring-yellow-100',
-                    shortName: 'Contract'
-                },
-                {
-                    id: 'anchor-kickoff',
-                    title: state.anchorOverrides['anchor-kickoff']?.title || 'Strategic Onboarding Kick-off',
-                    date: kickOff,
-                    owner: state.anchorOverrides['anchor-kickoff']?.owner || 'Implementation Leads',
-                    isAnchor: true,
-                    type: 'kickoff',
-                    status: state.anchorStatuses['anchor-kickoff'] || 'Pending',
-                    icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`,
-                    colorTheme: 'from-white to-white border-slate-200 text-[#1E252D] border-l-4 border-l-[#1E252D]',
-                    indicatorColor: 'bg-[#1E252D] ring-slate-200',
-                    shortName: 'Kick-off'
-                },
-                {
-                    id: 'anchor-golive',
-                    title: state.anchorOverrides['anchor-golive']?.title || 'Platform Production Go-Live 🎉',
-                    date: goLive,
-                    owner: state.anchorOverrides['anchor-golive']?.owner || 'Executive Champions & All Users',
-                    isAnchor: true,
-                    type: 'golive',
-                    status: state.anchorStatuses['anchor-golive'] || 'Pending',
-                    icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`,
-                    colorTheme: 'from-white to-white border-[#FDB813] text-[#1E252D] border-l-4 border-l-[#FDB813] font-bold',
-                    indicatorColor: 'bg-[#FDB813] ring-yellow-200',
-                    shortName: 'Launch'
-                }
+                { id: 'anchor-discovery', title: state.anchorOverrides['anchor-discovery']?.title || 'Strategic Discovery Call', date: discovery, owner: state.anchorOverrides['anchor-discovery']?.owner || 'Acme Champion & Seller Team', isAnchor: true, type: 'discovery', status: state.anchorStatuses['anchor-discovery'] || 'Completed', icon: `<svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-400', indicatorColor: 'bg-slate-400 ring-slate-100', shortName: 'Discovery' },
+                { id: 'anchor-signature', title: state.anchorOverrides['anchor-signature']?.title || 'Contract Finalization & Signed', date: signature, owner: state.anchorOverrides['anchor-signature']?.owner || 'Legal & Executive Sponsors', isAnchor: true, type: 'contract', status: state.anchorStatuses['anchor-signature'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#FDB813]', indicatorColor: 'bg-[#FDB813] ring-yellow-100', shortName: 'Contract' },
+                { id: 'anchor-kickoff', title: state.anchorOverrides['anchor-kickoff']?.title || 'Strategic Onboarding Kick-off', date: kickOff, owner: state.anchorOverrides['anchor-kickoff']?.owner || 'Implementation Leads', isAnchor: true, type: 'kickoff', status: state.anchorStatuses['anchor-kickoff'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#1E252D]', indicatorColor: 'bg-[#1E252D] ring-slate-200', shortName: 'Kick-off' },
+                { id: 'anchor-golive', title: state.anchorOverrides['anchor-golive']?.title || 'Platform Production Go-Live 🎉', date: goLive, owner: state.anchorOverrides['anchor-golive']?.owner || 'Executive Champions & All Users', isAnchor: true, type: 'golive', status: state.anchorStatuses['anchor-golive'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`, colorTheme: 'from-white to-white border-[#FDB813] border-l-4 border-l-[#FDB813] font-bold', indicatorColor: 'bg-[#FDB813] ring-yellow-200', shortName: 'Launch' }
             ];
 
-            // Collate custom user milestones
             let allMilestones = [...anchors];
             state.customMilestones.forEach(m => {
                 allMilestones.push({
-                    id: m.id,
-                    title: m.title,
-                    date: m.date,
-                    owner: m.owner,
-                    isAnchor: false,
-                    status: m.status || 'Pending',
-                    colorTheme: 'from-white to-white border-slate-200 text-[#1E252D] border-l-4 border-l-slate-300',
-                    indicatorColor: 'bg-slate-400 ring-slate-100',
+                    id: m.id, title: m.title, date: m.date, owner: m.owner, isAnchor: false, status: m.status || 'Pending',
+                    colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-300', indicatorColor: 'bg-slate-400 ring-slate-100',
                     icon: `<svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>`,
                     shortName: m.title.substring(0, 15) + (m.title.length > 15 ? '...' : '')
                 });
             });
 
-            // Chronological Sorting of Timeline Entries
             allMilestones.sort((a, b) => new Date(a.date + "T00:00:00") - new Date(b.date + "T00:00:00"));
 
-            // Compute Progress Metrics (Task Count & Completed % for HUD dashboard)
             const completedCount = allMilestones.filter(m => m.status === 'Completed').length;
-            const totalTasks = allMilestones.length;
-            const progressPercentage = Math.round((completedCount / totalTasks) * 100);
-
-            document.getElementById('metricProgress').innerText = `${progressPercentage}%`;
-            document.getElementById('metricTaskCount').innerText = `(${completedCount}/${totalTasks} done)`;
+            document.getElementById('metricProgress').innerText = `${Math.round((completedCount / allMilestones.length) * 100)}%`;
+            document.getElementById('metricTaskCount').innerText = `(${completedCount}/${allMilestones.length} done)`;
 
             const milestoneTimes = allMilestones.map(m => new Date(m.date + "T00:00:00").getTime());
             const minTime = Math.min(...milestoneTimes);
@@ -605,49 +1230,36 @@
             const totalDuration = maxTime - minTime;
 
             const horizontalTrack = document.getElementById('horizontalSummaryTrack');
-            
-            // Clean up old nodes leaving only Today tracker block in container
             const existingTodayLine = document.getElementById('horizontalTodayLine');
             horizontalTrack.innerHTML = '';
             horizontalTrack.appendChild(existingTodayLine);
 
             const todayTime = new Date(CURRENT_DATE_STR + "T00:00:00").getTime();
-            const hTodayLine = document.getElementById('horizontalTodayLine');
-
-            // Positioning "Today" line relative to scroll coordinates for pristine image_f2d006.png visual matches
             if (todayTime >= minTime && todayTime <= maxTime && totalDuration > 0) {
-                // Ensure alignment matching the proportional node scaling algorithm precisely (* 88 + 6 offset bounds)
-                const todayPct = ((todayTime - minTime) / totalDuration) * 88 + 6;
-                hTodayLine.style.left = `${todayPct}%`;
-                hTodayLine.classList.remove('hidden');
+                existingTodayLine.style.left = `${((todayTime - minTime) / totalDuration) * 88 + 6}%`;
+                existingTodayLine.classList.remove('hidden');
             } else {
-                hTodayLine.classList.add('hidden');
+                existingTodayLine.classList.add('hidden');
             }
 
-            // Assign initial proportional positions (Collision resolution visual engine pass)
             let positions = allMilestones.map(m => {
-                const mTime = new Date(m.date + "T00:00:00").getTime();
-                let pct = totalDuration > 0 ? ((mTime - minTime) / totalDuration) * 88 + 6 : 50;
-                return { milestone: m, pct: pct };
+                return { milestone: m, pct: totalDuration > 0 ? ((new Date(m.date + "T00:00:00").getTime() - minTime) / totalDuration) * 88 + 6 : 50 };
             });
 
-            let minGap = 15; // Minimum horizontal percentage gap to prevent overlap
-            let adjusted = true;
-            let iterations = 0;
-            
+            let adjusted = true, iterations = 0;
             while (adjusted && iterations < 15) {
                 adjusted = false;
                 for (let i = 0; i < positions.length - 1; i++) {
-                    if (positions[i+1].pct - positions[i].pct < minGap) {
-                        positions[i+1].pct = positions[i].pct + minGap;
+                    if (positions[i+1].pct - positions[i].pct < 15) {
+                        positions[i+1].pct = positions[i].pct + 15;
                         adjusted = true;
                     }
                 }
                 if (positions[positions.length - 1].pct > 94) {
                     positions[positions.length - 1].pct = 94;
                     for (let i = positions.length - 1; i > 0; i--) {
-                        if (positions[i].pct - positions[i-1].pct < minGap) {
-                            positions[i-1].pct = positions[i].pct - minGap;
+                        if (positions[i].pct - positions[i-1].pct < 15) {
+                            positions[i-1].pct = positions[i].pct - 15;
                             adjusted = true;
                         }
                     }
@@ -655,173 +1267,141 @@
                 iterations++;
             }
 
-            // Render Horizontal alternating nodes (Standardized with visual feedback color coding)
             positions.forEach((pos, idx) => {
                 const m = pos.milestone;
-                const percentage = pos.pct;
-
-                let statusBorderColor = "border-slate-350 bg-white";
-                let statusBadgeDot = "★";
-                
-                // Color node based on state status
-                if (m.status === 'Completed') {
-                    statusBorderColor = "border-emerald-500 bg-emerald-50 text-emerald-600 font-extrabold ring-4 ring-emerald-100";
-                    statusBadgeDot = "✓";
-                } else if (m.status === 'In Progress') {
-                    statusBorderColor = "border-amber-500 bg-amber-50 text-amber-700 animate-pulse ring-4 ring-amber-100";
-                    statusBadgeDot = "●";
-                } else if (m.status === 'Blocked') {
-                    statusBorderColor = "border-rose-500 bg-rose-50 text-rose-700 font-extrabold";
-                    statusBadgeDot = "!";
-                } else {
-                    if (m.type === 'golive') {
-                        statusBorderColor = "border-[#FDB813] bg-[#FDB813] text-[#1E252D] font-extrabold";
-                    } else if (m.type === 'kickoff') {
-                        statusBorderColor = "border-[#1E252D] bg-slate-50 text-[#1E252D]";
-                    }
-                }
+                let statusBorderColor = "border-slate-355 bg-white", statusBadgeDot = "★";
+                if (m.status === 'Completed') { statusBorderColor = "border-emerald-500 bg-emerald-50 text-emerald-600 font-extrabold ring-4 ring-emerald-100"; statusBadgeDot = "✓"; }
+                else if (m.status === 'In Progress') { statusBorderColor = "border-amber-500 bg-amber-50 text-amber-700 animate-pulse ring-4 ring-amber-100"; statusBadgeDot = "●"; }
+                else if (m.status === 'Blocked') { statusBorderColor = "border-rose-500 bg-rose-50 text-rose-700 font-extrabold"; statusBadgeDot = "!"; }
 
                 const isEven = idx % 2 === 0;
                 const summaryNode = document.createElement('div');
                 summaryNode.className = "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group cursor-pointer transition-transform hover:scale-110 z-20";
-                summaryNode.style.left = `${percentage}%`;
+                summaryNode.style.left = `${pos.pct}%`;
                 
-                summaryNode.onclick = () => {
-                    const detailedElement = document.getElementById(`detailed-${m.id}`);
-                    if (detailedElement) {
-                        detailedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        detailedElement.classList.add('ring-4', 'ring-[#FDB813]', 'scale-102');
-                        setTimeout(() => {
-                            detailedElement.classList.remove('ring-4', 'ring-[#FDB813]', 'scale-102');
-                        }, 2000);
-                    }
-                };
-
-                if (isEven) {
-                    summaryNode.innerHTML = `
-                        <div class="absolute bottom-6 flex flex-col items-center text-center whitespace-nowrap z-30">
-                            <span class="text-[10px] font-bold text-slate-800 truncate max-w-[75px] md:max-w-[100px] block" title="${m.title}">${m.shortName}</span>
-                            <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
-                            <div class="w-px h-1.5 bg-slate-450 mt-1"></div>
-                        </div>
-                        <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20 transition-all">
-                            ${statusBadgeDot}
-                        </div>
-                    `;
-                } else {
-                    summaryNode.innerHTML = `
-                        <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20 transition-all">
-                            ${statusBadgeDot}
-                        </div>
-                        <div class="absolute top-6 flex flex-col items-center text-center whitespace-nowrap z-30">
-                            <div class="w-px h-1.5 bg-slate-450 mb-1"></div>
-                            <span class="text-[10px] font-bold text-slate-800 truncate max-w-[75px] md:max-w-[100px] block" title="${m.title}">${m.shortName}</span>
-                            <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
-                        </div>
-                    `;
-                }
-                
+                summaryNode.innerHTML = isEven ? `
+                    <div class="absolute bottom-6 flex flex-col items-center text-center whitespace-nowrap z-30">
+                        <span class="text-[10px] font-bold text-slate-800 truncate max-w-[100px] block">${m.shortName}</span>
+                        <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
+                        <div class="w-px h-1.5 bg-slate-450 mt-1"></div>
+                    </div>
+                    <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20">${statusBadgeDot}</div>
+                ` : `
+                    <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20">${statusBadgeDot}</div>
+                    <div class="absolute top-6 flex flex-col items-center text-center whitespace-nowrap z-30">
+                        <div class="w-px h-1.5 bg-slate-450 mb-1"></div>
+                        <span class="text-[10px] font-bold text-slate-800 truncate max-w-[100px] block">${m.shortName}</span>
+                        <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
+                    </div>
+                `;
                 horizontalTrack.appendChild(summaryNode);
             });
 
             const container = document.getElementById('timelineContainer');
             container.innerHTML = '';
-
             let todayBannerInserted = false;
 
-            allMilestones.forEach((m, index) => {
-                const milestoneDateObj = new Date(m.date + "T00:00:00");
-
-                // Inject vertical "YOU ARE HERE" banner chronologically
-                if (!todayBannerInserted) {
-                    if (today < milestoneDateObj) {
-                        insertVerticalTodayBanner(container);
-                        todayBannerInserted = true;
-                    } else if (index === allMilestones.length - 1) {
-                        setTimeout(() => {
-                            insertVerticalTodayBanner(container);
-                        }, 50);
-                        todayBannerInserted = true;
-                    }
+            allMilestones.forEach((m, idx) => {
+                if (!todayBannerInserted && today < new Date(m.date + "T00:00:00")) {
+                    insertVerticalTodayBanner(container);
+                    todayBannerInserted = true;
                 }
 
                 const card = document.createElement('div');
                 card.id = `detailed-${m.id}`;
-                
-                // Set high-fidelity background states based on Milestone Status values
-                let backgroundStyle = m.colorTheme;
-                if (m.status === 'Completed') {
-                    backgroundStyle = "from-emerald-50/70 to-white border-emerald-300 text-[#1E252D] border-l-4 border-l-emerald-500 shadow-sm";
-                } else if (m.status === 'In Progress') {
-                    backgroundStyle = "from-amber-50/70 to-white border-amber-300 text-[#1E252D] border-l-4 border-l-amber-500 shadow-md ring-1 ring-amber-100";
-                } else if (m.status === 'Blocked') {
-                    backgroundStyle = "from-rose-50/70 to-white border-rose-300 text-[#1E252D] border-l-4 border-l-rose-500 shadow-sm";
-                }
+                let bStyle = m.colorTheme;
+                if (m.status === 'Completed') bStyle = "from-emerald-50/70 to-white border-emerald-300 border-l-4 border-l-emerald-500 shadow-sm";
+                else if (m.status === 'In Progress') bStyle = "from-amber-50/70 to-white border-amber-300 border-l-4 border-l-amber-500 shadow-md ring-1 ring-amber-100";
+                else if (m.status === 'Blocked') bStyle = "from-rose-50/70 to-white border-rose-300 border-l-4 border-l-rose-500 shadow-sm";
 
-                let hoverClasses = " hover:border-slate-350 transition-all duration-200 shadow-sm";
-                if (state.isAdmin) {
-                    hoverClasses = " cursor-pointer border-dashed border-slate-300 hover:border-[#FDB813] shadow-md transition-all";
-                }
-                card.className = "ml-12 relative flex flex-col md:flex-row md:justify-between md:items-center bg-gradient-to-r " + backgroundStyle + " border p-5 rounded-2xl gap-4" + hoverClasses;
-
-                // Configure Dynamic Indicator Badge Colors based on status values
-                let nodeColorClass = m.indicatorColor;
-                if (m.status === 'Completed') nodeColorClass = "bg-emerald-500 ring-emerald-100";
-                if (m.status === 'In Progress') nodeColorClass = "bg-amber-500 ring-amber-100";
-                if (m.status === 'Blocked') nodeColorClass = "bg-rose-500 ring-rose-100";
-
+                card.className = "ml-12 relative flex flex-col md:flex-row md:justify-between md:items-center bg-gradient-to-r " + bStyle + " border p-5 rounded-2xl gap-4 hover:border-slate-350 shadow-sm";
                 card.innerHTML = `
-                    <span class="absolute -left-[32px] md:-left-[36px] top-1/2 transform -translate-y-1/2 flex h-6 w-6 rounded-full ${nodeColorClass} ring-4 ring-[#F8FAFC] items-center justify-center z-10 shadow-sm transition-colors duration-300">
-                        ${m.status === 'Completed' ? '✓' : (m.isAnchor ? '<span class="h-1.5 w-1.5 bg-white rounded-full"></span>' : '')}
+                    <span class="absolute -left-[32px] md:-left-[36px] top-1/2 transform -translate-y-1/2 flex h-6 w-6 rounded-full bg-slate-400 ring-4 ring-[#F8FAFC] items-center justify-center z-10 text-[10px] text-white">
+                        ${m.status === 'Completed' ? '✓' : ''}
                     </span>
-
                     <div class="flex items-start gap-3.5">
-                        <div class="p-2.5 bg-white rounded-xl border border-slate-200 flex-shrink-0 shadow-sm">
-                            ${m.icon}
-                        </div>
+                        <div class="p-2.5 bg-white rounded-xl border border-slate-200">${m.icon}</div>
                         <div class="space-y-1">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <h4 class="text-sm font-bold tracking-tight text-[#1E252D]">${m.title}</h4>
-                                <span class="text-[9px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-md border ${m.status === 'Completed' ? 'bg-emerald-100/60 border-emerald-350 text-emerald-800' : (m.status === 'In Progress' ? 'bg-amber-100/60 border-amber-350 text-amber-800' : (m.status === 'Blocked' ? 'bg-rose-100/60 border-rose-350 text-rose-800' : 'bg-slate-100 border-slate-250 text-slate-700'))}">
-                                    ${m.status}
-                                </span>
+                                <span class="text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-md border">${m.status}</span>
                             </div>
                             <p class="text-xs text-slate-500">Responsible: <span class="font-semibold text-slate-700">${m.owner}</span></p>
                         </div>
                     </div>
-
                     <div class="flex items-center gap-3 justify-between md:justify-end border-t md:border-t-0 border-slate-200 pt-3 md:pt-0">
-                        <span class="text-xs font-extrabold text-[#1E252D] bg-white py-1 px-3 rounded-lg border border-slate-200 shadow-sm">
-                            ${formatReadableDate(m.date)}
-                        </span>
-
+                        <span class="text-xs font-extrabold text-[#1E252D] bg-white py-1 px-3 rounded-lg border border-slate-200 shadow-sm">${formatReadableDate(m.date)}</span>
                         <div class="flex items-center gap-1.5">
-                            <select onchange="updateMilestoneStatus('${m.id}', this.value)" class="text-[10px] bg-white hover:bg-slate-50 text-[#1E252D] border border-slate-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#FDB813] font-bold cursor-pointer shadow-sm">
+                            <select onchange="updateMilestoneStatus('${m.id}', this.value)" class="text-[10px] bg-white border border-slate-300 rounded-lg px-2 py-1 font-bold shadow-sm focus:outline-none">
                                 <option value="Pending" ${m.status === 'Pending' ? 'selected' : ''}>Pending</option>
                                 <option value="In Progress" ${m.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
                                 <option value="Completed" ${m.status === 'Completed' ? 'selected' : ''}>Completed</option>
                                 <option value="Blocked" ${m.status === 'Blocked' ? 'selected' : ''}>Blocked</option>
                             </select>
-
-                            ${state.isAdmin ? `
-                                <div class="flex items-center gap-1 border-l pl-2 border-slate-200">
-                                    <button onclick="editMilestone('${m.id}')" class="text-[10px] bg-white hover:bg-[#FDB813] hover:text-[#1E252D] text-[#1E252D] border border-slate-350 hover:border-[#FDB813] px-2 py-1 rounded-lg font-extrabold shadow-sm transition-all">
-                                        Edit
-                                    </button>
-                                    ${!m.isAnchor ? `
-                                        <button onclick="deleteMilestone('${m.id}')" class="text-[10px] bg-slate-50 hover:bg-rose-50 hover:text-rose-700 text-slate-500 border border-slate-200 hover:border-rose-300 px-2 py-1 rounded-lg font-bold shadow-sm transition-all">
-                                            Del
-                                        </button>
-                                    ` : ''}
-                                </div>
-                            ` : ''}
+                            ${state.isAdmin ? `<button onclick="editMilestone('${m.id}')" class="text-[10px] bg-white border border-slate-350 px-2 py-1 rounded-lg font-extrabold">Edit</button>` : ''}
                         </div>
                     </div>
                 `;
-
                 container.appendChild(card);
             });
+            if (!todayBannerInserted) insertVerticalTodayBanner(container);
         }
+
+        function editMilestone(id) {
+            if (!state.isAdmin) return;
+            const isAnchor = id.startsWith('anchor-');
+            if (isAnchor) {
+                document.getElementById('modalTitle').innerText = "Edit Core Anchor Milestone";
+                document.getElementById('modalId').value = id;
+                document.getElementById('modalName').value = state.anchorOverrides[id]?.title || "";
+                document.getElementById('modalDate').disabled = true;
+                document.getElementById('dateLockBadge').classList.remove('hidden');
+                document.getElementById('modalOwner').value = state.anchorOverrides[id]?.owner || "";
+                document.getElementById('modalStatus').value = state.anchorStatuses[id] || 'Pending';
+            } else {
+                const m = state.customMilestones.find(milestone => milestone.id === id);
+                if (!m) return;
+                document.getElementById('modalTitle').innerText = "Edit Custom Milestone";
+                document.getElementById('modalId').value = m.id;
+                document.getElementById('modalName').value = m.title;
+                document.getElementById('modalDate').value = m.date;
+                document.getElementById('modalDate').disabled = false;
+                document.getElementById('dateLockBadge').classList.add('hidden');
+                document.getElementById('modalOwner').value = m.owner;
+                document.getElementById('modalStatus').value = m.status || 'Pending';
+            }
+            document.getElementById('milestoneModal').classList.remove('hidden');
+        }
+
+        function saveCustomMilestone() {
+            const id = document.getElementById('modalId').value;
+            const title = document.getElementById('modalName').value;
+            const date = document.getElementById('modalDate').value;
+            const owner = document.getElementById('modalOwner').value || 'Unassigned';
+            const status = document.getElementById('modalStatus').value || 'Pending';
+
+            if (!title) return showToast("Milestone Title is required.", "error");
+
+            if (id) {
+                if (id.startsWith('anchor-')) {
+                    state.anchorOverrides[id] = { title, owner };
+                    state.anchorStatuses[id] = status;
+                } else {
+                    const idx = state.customMilestones.findIndex(m => m.id === id);
+                    if (idx !== -1) state.customMilestones[idx] = { id, title, date, owner, status };
+                }
+            } else {
+                if (!date) return showToast("Date is required.", "error");
+                state.customMilestones.push({ id: 'custom-' + Date.now().toString(), title, date, owner, status });
+            }
+            saveState();
+            renderTimeline();
+            closeMilestoneModal();
+        }
+
+        function openMilestoneModal() { document.getElementById('milestoneModal').classList.remove('hidden'); }
+        function closeMilestoneModal() { document.getElementById('milestoneModal').classList.add('hidden'); }
+        function deleteMilestone(id) { state.customMilestones = state.customMilestones.filter(m => m.id !== id); saveState(); renderTimeline(); }
 
         function insertVerticalTodayBanner(container) {
             const separator = document.createElement('div');
@@ -837,147 +1417,29 @@
             container.appendChild(separator);
         }
 
-        function openMilestoneModal() {
-            document.getElementById('modalTitle').innerText = "Add Custom Milestone";
-            document.getElementById('modalId').value = '';
-            document.getElementById('modalName').value = '';
-            document.getElementById('modalDate').value = '';
-            document.getElementById('modalDate').disabled = false;
-            document.getElementById('dateLockBadge').classList.add('hidden');
-            document.getElementById('modalOwner').value = '';
-            document.getElementById('modalStatus').value = 'Pending';
-            document.getElementById('milestoneModal').classList.remove('hidden');
-        }
-
-        function closeMilestoneModal() {
-            document.getElementById('milestoneModal').classList.add('hidden');
-            document.getElementById('modalId').value = '';
-            document.getElementById('modalName').value = '';
-            document.getElementById('modalDate').value = '';
-            document.getElementById('modalDate').disabled = false;
-            document.getElementById('dateLockBadge').classList.add('hidden');
-            document.getElementById('modalOwner').value = '';
-        }
-
-        function editMilestone(id) {
-            if (!state.isAdmin) return;
-
-            const isAnchor = id.startsWith('anchor-');
-            
-            if (isAnchor) {
-                const goLive = state.goLiveDate;
-                const kickOff = getOffsetMonths(goLive, -4); 
-                const signature = getOffsetDate(kickOff, -35); 
-                const discovery = state.discoveryDate;
-
-                let dateVal = "";
-                let defaultTitle = "";
-                let defaultOwner = "";
-
-                if (id === 'anchor-discovery') {
-                    dateVal = discovery;
-                    defaultTitle = "Strategic Discovery Call";
-                    defaultOwner = "Acme Champion & Seller Team";
-                } else if (id === 'anchor-signature') {
-                    dateVal = signature;
-                    defaultTitle = "Contract Finalization & Signed";
-                    defaultOwner = "Legal & Executive Sponsors";
-                } else if (id === 'anchor-kickoff') {
-                    dateVal = kickOff;
-                    defaultTitle = "Strategic Onboarding Kick-off";
-                    defaultOwner = "Implementation Leads";
-                } else if (id === 'anchor-golive') {
-                    dateVal = goLive;
-                    defaultTitle = "Platform Production Go-Live 🎉";
-                    defaultOwner = "Executive Champions & All Users";
-                }
-
-                const currentOverride = state.anchorOverrides[id] || {};
-                
-                document.getElementById('modalTitle').innerText = "Edit Core Anchor Milestone";
-                document.getElementById('modalId').value = id;
-                document.getElementById('modalName').value = currentOverride.title || defaultTitle;
-                document.getElementById('modalDate').value = dateVal;
-                document.getElementById('modalDate').disabled = true; 
-                document.getElementById('dateLockBadge').classList.remove('hidden');
-                document.getElementById('modalOwner').value = currentOverride.owner || defaultOwner;
-                document.getElementById('modalStatus').value = state.anchorStatuses[id] || 'Pending';
-            } else {
-                const m = state.customMilestones.find(milestone => milestone.id === id);
-                if (!m) return;
-
-                document.getElementById('modalTitle').innerText = "Edit Custom Milestone";
-                document.getElementById('modalId').value = m.id;
-                document.getElementById('modalName').value = m.title;
-                document.getElementById('modalDate').value = m.date;
-                document.getElementById('modalDate').disabled = false;
-                document.getElementById('dateLockBadge').classList.add('hidden');
-                document.getElementById('modalOwner').value = m.owner;
-                document.getElementById('modalStatus').value = m.status || 'Pending';
-            }
-
-            document.getElementById('milestoneModal').classList.remove('hidden');
-        }
-
-        function saveCustomMilestone() {
-            const id = document.getElementById('modalId').value;
-            const title = document.getElementById('modalName').value;
-            const date = document.getElementById('modalDate').value;
-            const owner = document.getElementById('modalOwner').value || 'Unassigned';
-            const status = document.getElementById('modalStatus').value || 'Pending';
-
-            if (!title) {
-                showToast("Milestone Title is required.", "error");
-                return;
-            }
-
-            if (id) {
-                if (id.startsWith('anchor-')) {
-                    state.anchorOverrides[id] = { title, owner };
-                    state.anchorStatuses[id] = status;
-                    showToast("Core anchor details customized!", "success");
-                } else {
-                    const idx = state.customMilestones.findIndex(m => m.id === id);
-                    if (idx !== -1) {
-                        if (!date) {
-                            showToast("Date is required for custom milestones.", "error");
-                            return;
-                        }
-                        state.customMilestones[idx] = { id, title, date, owner, status };
-                        showToast("Milestone settings updated successfully!", "success");
-                    }
-                }
-            } else {
-                if (!date) {
-                    showToast("Date is required.", "error");
-                    return;
-                }
-                const newMilestone = {
-                    id: 'custom-' + Date.now().toString(),
-                    title: title,
-                    date: date,
-                    owner: owner,
-                    status: status
-                };
-                state.customMilestones.push(newMilestone);
-                showToast("New custom milestone scheduled!", "success");
-            }
-
-            saveState();
-            renderTimeline();
-            closeMilestoneModal();
-        }
-
-        function deleteMilestone(id) {
-            state.customMilestones = state.customMilestones.filter(m => m.id !== id);
-            saveState();
-            renderTimeline();
-            showToast("Custom milestone removed from plan.", "info");
-        }
-
         window.onload = function() {
             loadState();
-            renderTimeline();
+            setupROIEventListeners();
+
+            // Real-Time Listener syncing interface on broadcast payload updates
+            if (supabaseInstance && currentProspectId) {
+                supabaseInstance
+                    .channel('evaluations-realtime')
+                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'evaluations', filter: `id=eq.${currentProspectId}` }, payload => {
+                        const data = payload.new;
+                        state.discoveryDate = data.discovery_date;
+                        state.goLiveDate = data.go_live_date;
+                        state.customMilestones = data.custom_milestones;
+                        state.anchorOverrides = data.anchor_overrides;
+                        state.anchorStatuses = data.anchor_statuses;
+                        state.roi = data.roi;
+                        
+                        renderTimeline();
+                        fillROIInputsFromState();
+                        calculateROI();
+                    })
+                    .subscribe();
+            }
         };
     </script>
 </body>
