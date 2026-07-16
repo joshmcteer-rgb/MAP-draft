@@ -53,7 +53,7 @@
                         Joint Evaluation Portal
                     </span>
                     <span id="adminBadge" class="hidden bg-[#1E252D] text-[#FDB813] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                        Seller Admin Mode
+                        Texada Admin Mode
                     </span>
                 </div>
                 <!-- Visual branding header mapping the logo format in image_f2d006.png -->
@@ -124,7 +124,7 @@
                     <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Overall Progress</span>
                     <div class="flex items-center gap-2">
                         <span id="metricProgress" class="text-xl md:text-2xl font-black text-emerald-600">0%</span>
-                        <span class="text-[10px] text-slate-500 font-semibold id=metricTaskCount inline" id="metricTaskCount">(0/0 done)</span>
+                        <span class="text-[10px] text-slate-500 font-semibold inline" id="metricTaskCount">(0/0 done)</span>
                     </div>
                 </div>
                 <div class="space-y-1 p-2 border-l-0 sm:border-l border-slate-150">
@@ -166,7 +166,7 @@
                             <!-- Nodes are injected here dynamically -->
                             
                             <!-- Dynamic "Today" Indicator Line with "Today" label styled exactly as shown in image_f2d006.png -->
-                            <!-- Starts at top-8 to protect the absolute absolute pill top coordinate from getting clipped by wrapper overflow-x bounds -->
+                            <!-- Starts at top-8 to protect the absolute pill top coordinate from getting clipped by wrapper overflow-x bounds -->
                             <div id="horizontalTodayLine" class="absolute top-8 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none hidden transition-all duration-350">
                                 <!-- Capsule button wrapper with tiny live amber badge at top of the bar -->
                                 <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1E252D] text-[#FDB813] text-[10px] font-black tracking-widest uppercase px-3.5 py-1.5 rounded-full shadow-lg whitespace-nowrap flex items-center gap-1.5 border border-[#FDB813]/20">
@@ -257,9 +257,9 @@
     </div>
 
     <!-- Floating Action Trigger: Toggle Admin Mode -->
-    <button onclick="toggleAdmin(null)" class="fixed bottom-6 right-6 bg-[#1E252D] hover:bg-slate-800 text-white p-3.5 rounded-full shadow-xl transition-all duration-300 z-50 border border-[#FDB813]/25 flex items-center gap-2 text-xs font-bold group" title="Toggle Seller Workspace">
+    <button onclick="toggleAdmin(null)" class="fixed bottom-6 right-6 bg-[#1E252D] hover:bg-slate-800 text-white p-3.5 rounded-full shadow-xl transition-all duration-300 z-50 border border-[#FDB813]/25 flex items-center gap-2 text-xs font-bold group" title="Texada Admin Mode">
         <span class="text-[#FDB813] group-hover:rotate-45 duration-300 transform inline-block">⚙️</span>
-        <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-350 ease-in-out whitespace-nowrap">Seller Workspace Toggle</span>
+        <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-350 ease-in-out whitespace-nowrap">Texada Admin Mode</span>
     </button>
 
     <!-- Interactive Engine Scripts -->
@@ -828,7 +828,6 @@
             separator.className = "ml-12 relative flex items-center justify-between bg-[#1E252D] text-white p-3.5 rounded-xl border-l-4 border-[#FDB813] shadow-md";
             separator.innerHTML = `
                 <div class="flex items-center gap-2">
-                    <span class="text-[#FDB813] text-md animate-bounce">📍</span>
                     <span class="text-xs font-black uppercase tracking-widest text-[#FDB813]">YOU ARE HERE</span>
                 </div>
                 <span class="text-xs font-extrabold px-2.5 py-0.5 bg-slate-800 rounded-md text-[#FDB813] border border-slate-700">
