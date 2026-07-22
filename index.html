@@ -301,7 +301,7 @@
                 <div class="max-w-md mx-auto space-y-2">
                     <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight uppercase">Texada Workspace Gateway</h2>
                     <p class="text-sm text-slate-500 leading-relaxed">
-                        Create a brand-new customer alignment roadmap blueprint or search the Supabase cloud database to open an existing saved evaluation workspace.
+                        Build a collaborative evaluation roadmap and quantify your operational ROI, or search to open an existing joint workspace.
                     </p>
                 </div>
 
@@ -448,7 +448,7 @@
                     <p class="text-slate-900 text-base md:text-lg font-black uppercase tracking-tight text-center sm:text-left leading-tight">
                         Texada’s Equipment Rental Management Software - ROI Calculator
                     </p>
-                    <p class="text-slate-500 text-xs text-center sm:text-left">Quantify your annual operational savings and productivity gains instantly.</p>
+                    <p class="text-slate-500 text-xs text-center sm:text-left">Quantify your annual revenue growth, operational savings, and productivity gains instantly.</p>
                 </div>
                 
                 <div class="text-center sm:text-right bg-slate-50 p-5 rounded-2xl w-full sm:w-auto border border-slate-200/60 shadow-inner shrink-0">
@@ -735,66 +735,73 @@
                     </div>
 
                     <!-- Dynamic Texada Standards Panel with Integrated Preset Switcher -->
-                    <div id="texadaStandardsCard" class="bg-[#1E252D] text-white p-6 rounded-2xl border border-[#FDB813]/20 shadow-md space-y-4 animate-fade-in mt-2">
-                        <div class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-3 gap-2">
-                            <div>
-                                <h4 class="text-xs font-black uppercase tracking-widest text-[#FDB813]">Texada Standards</h4>
-                                <p class="text-[9px] text-slate-400 font-semibold">Operational target benchmarks</p>
+                    <div id="texadaStandardsCard" class="bg-[#12161A] text-white p-5 md:p-6 rounded-2xl border border-slate-800/80 shadow-lg space-y-4 animate-fade-in">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-3 border-b border-slate-800/80 gap-3">
+                            <div class="space-y-0.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-[#FDB813]"></span>
+                                    <h4 class="text-xs font-extrabold uppercase tracking-widest text-[#FDB813]">Texada Standards</h4>
+                                </div>
+                                <p class="text-[10px] text-slate-400 font-medium">Industry operational benchmark targets</p>
                             </div>
                             <!-- Integrated Interactive Preset Switcher -->
-                            <div class="inline-flex bg-slate-900 p-1 rounded-lg border border-slate-700/80 gap-1">
+                            <div class="inline-flex bg-slate-900/90 p-1 rounded-xl border border-slate-800 gap-1 w-full sm:w-auto justify-between">
                                 <button id="btnScenarioConservative" onclick="applyRoiScenario('conservative')" class="scenario-btn-dark inactive">Conservative</button>
                                 <button id="btnScenarioTarget" onclick="applyRoiScenario('target')" class="scenario-btn-dark active">Target</button>
                                 <button id="btnScenarioAggressive" onclick="applyRoiScenario('aggressive')" class="scenario-btn-dark inactive">Aggressive</button>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4 pt-1">
-                            <div class="space-y-0.5">
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Dollar Ute</span>
-                                <span id="std-dollar-ute" class="text-lg font-black text-[#FDB813] tracking-tight">+7.5% Pts</span>
+                        
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/60 flex flex-col justify-between space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Dollar Ute</span>
+                                <span id="std-dollar-ute" class="text-lg md:text-xl font-black text-[#FDB813] tracking-tight">+7.5% Pts</span>
                             </div>
-                            <div class="space-y-0.5">
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Billing Efficiency</span>
-                                <span id="std-billing-eff" class="text-lg font-black text-[#FDB813] tracking-tight">50% Gain</span>
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/60 flex flex-col justify-between space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Billing Efficiency</span>
+                                <span id="std-billing-eff" class="text-lg md:text-xl font-black text-[#FDB813] tracking-tight">50% Gain</span>
                             </div>
-                            <div class="space-y-0.5">
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Tech Productivity</span>
-                                <span id="std-tech-prod" class="text-lg font-black text-[#FDB813] tracking-tight">30m / Day</span>
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/60 flex flex-col justify-between space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tech Productivity</span>
+                                <span id="std-tech-prod" class="text-lg md:text-xl font-black text-[#FDB813] tracking-tight">30m / Day</span>
                             </div>
-                            <div class="space-y-0.5">
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Fuel Recovery</span>
-                                <span id="std-fuel-rec" class="text-lg font-black text-[#FDB813] tracking-tight">20% Gain</span>
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/60 flex flex-col justify-between space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Fuel Recovery</span>
+                                <span id="std-fuel-rec" class="text-lg md:text-xl font-black text-[#FDB813] tracking-tight">20% Gain</span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Complete Workflow Management Info Card -->
                     <div class="bg-white border-2 border-dashed border-slate-200 p-6 rounded-2xl shadow-sm space-y-2 animate-fade-in">
-                        <h4 class="text-xs font-black text-slate-900 uppercase tracking-wider">Complete Workflow Management</h4>
-                        <p class="text-[11px] text-slate-500 leading-relaxed font-medium">
+                        <h4 class="text-sm md:text-base font-black text-slate-900 uppercase tracking-wider">Complete Workflow Management</h4>
+                        <p class="text-xs md:text-sm text-slate-600 leading-relaxed font-medium">
                             Texada delivers purpose-built software that transforms how equipment rental businesses operate. From inventory tracking and field service to e-commerce and analytics, our connected platform helps you manage every asset and maximize every opportunity.
                         </p>
                     </div>
 
                     <!-- Built for Heavy Equipment Rental Card -->
-                    <div class="bg-[#1E252D] text-white p-6 rounded-2xl border border-[#FDB813]/20 shadow-md space-y-4 animate-fade-in">
-                        <h4 class="text-xs font-black uppercase tracking-wider text-slate-200">Built for Heavy Equipment Rental</h4>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="space-y-0.5">
-                                <span class="text-lg font-black text-[#FDB813]">180+</span>
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Years Experience</span>
+                    <div class="bg-[#12161A] text-white p-5 md:p-6 rounded-2xl border border-slate-800/80 shadow-lg space-y-4 animate-fade-in">
+                        <div class="flex items-center gap-2 pb-3 border-b border-slate-800/80">
+                            <span class="w-2 h-2 rounded-full bg-[#FDB813]"></span>
+                            <h4 class="text-xs font-extrabold uppercase tracking-widest text-[#FDB813]">Built for Heavy Equipment Rental</h4>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 pt-1">
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/60 flex flex-col justify-between space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Experience</span>
+                                <span class="text-lg md:text-xl font-black text-[#FDB813] tracking-tight">180+ Years</span>
                             </div>
-                            <div class="space-y-0.5">
-                                <span class="text-lg font-black text-[#FDB813]">60k+</span>
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Users on Platform</span>
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/60 flex flex-col justify-between space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Platform Users</span>
+                                <span class="text-lg md:text-xl font-black text-[#FDB813] tracking-tight">60k+</span>
                             </div>
-                            <div class="space-y-0.5">
-                                <span class="text-lg font-black text-[#FDB813]">40+</span>
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Years Serving Industry</span>
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/60 flex flex-col justify-between space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Industry Service</span>
+                                <span class="text-lg md:text-xl font-black text-[#FDB813] tracking-tight">40+ Years</span>
                             </div>
-                            <div class="space-y-0.5">
-                                <span class="text-lg font-black text-[#FDB813]">380+</span>
-                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Businesses on Platform</span>
+                            <div class="bg-slate-900/60 p-3.5 rounded-xl border border-slate-800/60 flex flex-col justify-between space-y-1">
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Active Businesses</span>
+                                <span class="text-lg md:text-xl font-black text-[#FDB813] tracking-tight">380+</span>
                             </div>
                         </div>
                     </div>
