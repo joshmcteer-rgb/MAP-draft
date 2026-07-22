@@ -248,10 +248,10 @@
         <div class="max-w-4xl mx-auto flex flex-col gap-5">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div>
-                    <div class="flex items-center gap-3 mt-3">
-                        <img src="https://cdn.news.ararental.org/wp-content/uploads/2024/08/05161505/Texada-Software-thumbnail-600x338.jpg" alt="Texada Logo" class="h-14 md:h-20 w-auto object-contain rounded-md">
-                        <div class="h-10 md:h-14 w-px bg-slate-200"></div>
-                        <h1 class="text-2xl md:text-3xl font-black text-[#1E252D] tracking-tight uppercase">EVALUATION PLAN</h1>
+                    <div class="flex items-center gap-3 mt-1">
+                        <img src="https://cdn.news.ararental.org/wp-content/uploads/2024/08/05161505/Texada-Software-thumbnail-600x338.jpg" alt="Texada Logo" class="h-12 md:h-16 w-auto object-contain rounded-md">
+                        <div class="h-8 md:h-10 w-px bg-slate-200"></div>
+                        <h1 class="text-lg md:text-xl font-black text-[#1E252D] tracking-tight uppercase whitespace-nowrap">EVALUATION PLAN</h1>
                     </div>
                     <p id="headerSubtitle" class="text-slate-500 text-sm mt-1">Co-developed timeline mapping for Texada Prospect</p>
                 </div>
@@ -295,7 +295,7 @@
                     <img src="https://cdn.news.ararental.org/wp-content/uploads/2024/08/05161505/Texada-Software-thumbnail-600x338.jpg" alt="Texada Software" class="h-16 md:h-20 w-auto object-contain mb-1 rounded-lg">
                     <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight uppercase">Texada Workspace Gateway</h2>
                     <p class="text-sm text-slate-500 leading-relaxed">
-                        Design a collaborative evaluation roadmap and project ROI for your team, or search to open an existing evaluation workspace.
+                        Create a brand-new customer alignment roadmap blueprint or search for an existing saved evaluation workspace.
                     </p>
                 </div>
 
@@ -868,6 +868,7 @@
         }
 
         function getOffsetDate(baseDateStr, daysOffset) {
+            if (!baseDateStr) return "";
             const dateParts = baseDateStr.split('-');
             const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
             date.setDate(date.getDate() + daysOffset);
@@ -879,14 +880,51 @@
         }
 
         function getOffsetMonths(baseDateStr, monthsOffset) {
+            if (!baseDateStr) return "";
             const dateParts = baseDateStr.split('-');
-            const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
-            date.setMonth(date.getMonth() + monthsOffset);
-            
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            let year = parseInt(dateParts[0]);
+            let month = parseInt(dateParts[1]) - 1;
+            let day = parseInt(dateParts[2]);
+
+            let targetMonth = month + monthsOffset;
+            let targetYear = year + Math.floor(targetMonth / 12);
+            targetMonth = (targetMonth % 12 + 12) % 12;
+
+            let daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+            let targetDay = Math.min(day, daysInTargetMonth);
+
+            const mStr = String(targetMonth + 1).padStart(2, '0');
+            const dStr = String(targetDay).padStart(2, '0');
+            return `${targetYear}-${mStr}-${dStr}`;
+        }
+
+        function updateDiscoveryDate(val) {
+            if (!val) return;
+            state.discoveryDate = val;
+            saveState();
+            renderTimeline();
+        }
+
+        function updateGoLiveDate(val) {
+            if (!val) return;
+            state.goLiveDate = val;
+            saveState();
+            renderTimeline();
+        }
+
+        function updateKickOffDate(val) {
+            if (!val) return;
+            state.goLiveDate = getOffsetMonths(val, 4);
+            saveState();
+            renderTimeline();
+        }
+
+        function updateSignatureDate(val) {
+            if (!val) return;
+            const kickOff = getOffsetDate(val, 42);
+            state.goLiveDate = getOffsetMonths(kickOff, 4);
+            saveState();
+            renderTimeline();
         }
 
         function formatReadableDate(dateStr) {
@@ -1089,11 +1127,6 @@
 
             const currentUte = parseFloat(document.getElementById('dollar-curr')?.value || 0);
 
-            // Agreed scenario defaults:
-            // Dollar Ute Lift: +5.0%, +7.5%, +10.0%
-            // Billing Efficiency: 25%, 50%, 75%
-            // Tech Productivity: 20m, 30m, 40m / Day
-            // Fuel Recovery: 10%, 20%, 30%
             let uteLift = 7.5;
             let fuelGain = 20;
             let billingGain = 50;
@@ -1128,7 +1161,6 @@
             const techReclaimInput = document.getElementById('staff-serv-daily-reclaim');
             if (techReclaimInput) techReclaimInput.value = techReclaim.toString();
 
-            // Dynamic Texada Standards card update
             const stdUte = document.getElementById('std-dollar-ute');
             const stdBill = document.getElementById('std-billing-eff');
             const stdTech = document.getElementById('std-tech-prod');
@@ -1310,7 +1342,6 @@
             const techReclaim = parseFloat(document.getElementById('staff-serv-daily-reclaim')?.value || 0);
             const techRecovery = parseFloat(document.getElementById('staff-serv-recovery')?.value || 0);
 
-            // Corrected Revenue Lift math: Target Revenue Potential minus Current Gross Revenue
             const targetPotential = (targetUte / 100) * oec;
             const revGain = Math.max(0, targetPotential - rev);
             
@@ -1353,7 +1384,6 @@
                 dollarCurrEl.value = "";
                 return;
             }
-            // Standard Dollar UTE Formula = (Annual Rental Revenue / Fleet OEC) * 100
             const curr = (rev / oec) * 100;
             dollarCurrEl.value = curr.toFixed(2);
             
@@ -1478,8 +1508,8 @@
             if (hSubtitle) hSubtitle.innerHTML = state.prospectName ? `Co-developed timeline mapping for <strong>${state.prospectName}</strong>` : "Co-developed timeline mapping for Texada Prospect";
 
             const goLive = state.goLiveDate;
-            const kickOff = getOffsetMonths(goLive, -4); // 4 months required prior to Go-Live
-            const signature = getOffsetDate(kickOff, -42); // Exactly 6 weeks (42 days) required prior to Kick-Off
+            const kickOff = getOffsetMonths(goLive, -4);
+            const signature = getOffsetDate(kickOff, -42);
             const discovery = state.discoveryDate;
 
             const goLiveParts = goLive.split('-');
@@ -1506,17 +1536,14 @@
 
             if (riskEl) {
                 if (totalDurationDays >= 190 && evalDays >= 28) {
-                    // Low Risk: Full 4+ weeks evaluation, 6 weeks to kickoff, 4 months implementation
                     riskEl.innerText = "Low";
                     riskEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wide";
                     if (realityAlert) realityAlert.classList.add('hidden');
                 } else if (totalDurationDays >= 150) {
-                    // Moderate Risk: Compressed evaluation phase (14 to 27 days), but onboarding & implementation are intact
                     riskEl.innerText = "Moderate";
                     riskEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200 uppercase tracking-wide";
                     if (realityAlert) realityAlert.classList.add('hidden');
                 } else {
-                    // High Risk: Total time under 150 days severely compresses evaluation (<14 days) or implementation (<4 months)
                     riskEl.innerText = "High";
                     riskEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200 uppercase tracking-wide";
                     if (realityAlert) {
@@ -1586,18 +1613,15 @@
                 const totalDuration = maxTime - minTime;
                 const nMilestones = allMilestones.length;
 
-                // Hybrid Rank + Date Ratio spacing algorithm for clean visual balance across the track
                 let positions = allMilestones.map((m, idx) => {
                     const p = m.date.split('-');
                     const mTime = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])).getTime();
                     const linearPct = totalDuration > 0 ? ((mTime - minTime) / totalDuration) * 80 + 10 : 50;
                     const rankPct = nMilestones > 1 ? (idx / (nMilestones - 1)) * 80 + 10 : 50;
-                    // Blend 75% rank distribution with 25% date ratio to balance spacing and eliminate disproportionate gaps
                     const blendedPct = rankPct * 0.75 + linearPct * 0.25;
                     return { milestone: m, time: mTime, pct: blendedPct };
                 });
 
-                // Collision buffer adjustment to prevent node overlap
                 let adjusted = true, iterations = 0;
                 while (adjusted && iterations < 15) {
                     adjusted = false;
@@ -1619,7 +1643,6 @@
                     iterations++;
                 }
 
-                // Interpolate Today line placement smoothly along the balanced milestone track
                 let todayPct = 50;
                 if (nMilestones > 0) {
                     if (todayTime <= positions[0].time) {
@@ -1638,7 +1661,6 @@
                     }
                 }
 
-                // Render Today Line
                 const todayLine = document.createElement('div');
                 todayLine.id = 'horizontalTodayLine';
                 todayLine.className = "absolute top-8 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none transition-all duration-350";
@@ -1715,8 +1737,21 @@
                 else if (m.status === 'Blocked') bStyle = "from-rose-50/70 to-white border-rose-300 border-l-4 border-l-rose-500 shadow-sm";
 
                 card.className = "ml-12 relative flex flex-col md:flex-row md:justify-between md:items-center bg-gradient-to-r " + bStyle + " border p-5 rounded-2xl gap-4 shadow-sm";
+                
+                let statusDropdown = '';
+                if (state.isAdmin) {
+                    statusDropdown = `
+                        <select onchange="updateMilestoneStatus('${m.id}', this.value)" class="bg-white border border-slate-300 rounded-lg text-xs font-bold px-2 py-1 text-[#1E252D] focus:outline-none focus:ring-1 focus:ring-[#FDB813]">
+                            <option value="Pending" ${m.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            <option value="In Progress" ${m.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Completed" ${m.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                            <option value="Blocked" ${m.status === 'Blocked' ? 'selected' : ''}>Blocked</option>
+                        </select>
+                    `;
+                }
+
                 card.innerHTML = `
-                    <span class="absolute -left-[32px] md:-left-[36px] top-1/2 transform -translate-y-1/2 flex h-6 w-6 rounded-full bg-slate-400 ring-4 ring-[#F8FAFC] items-center justify-center z-10 text-[10px] text-white">
+                    <span class="absolute -left-[32px] md:-left-[36px] top-1/2 transform -translate-y-1/2 flex h-6 w-6 rounded-full ${m.status === 'Completed' ? 'bg-emerald-500' : 'bg-slate-400'} ring-4 ring-[#F8FAFC] items-center justify-center z-10 text-[10px] text-white">
                         ${m.status === 'Completed' ? '✓' : ''}
                     </span>
                     <div class="flex items-start gap-3.5">
@@ -1730,45 +1765,53 @@
                             ${m.attachment ? `<a href="${m.attachment}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-md mt-1">📎 View Attachment</a>` : ''}
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 justify-between md:justify-end border-t md:border-t-0 border-slate-200 pt-3 md:pt-0">
-                        <span class="text-xs font-extrabold text-[#1E252D] bg-white py-1 px-3 rounded-lg border border-slate-200 shadow-sm">${formatReadableDate(m.date)}</span>
-                        <div class="flex items-center gap-1.5">
-                            <select onchange="updateMilestoneStatus('${m.id}', this.value)" class="text-[10px] bg-white border border-slate-300 rounded-lg px-2 py-1 font-bold shadow-sm focus:outline-none">
-                                <option value="Pending" ${m.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                                <option value="In Progress" ${m.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="Completed" ${m.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                                <option value="Blocked" ${m.status === 'Blocked' ? 'selected' : ''}>Blocked</option>
-                            </select>
-                            ${state.isAdmin ? `<button onclick="editMilestone('${m.id}')" class="text-[10px] bg-white border border-slate-350 px-2 py-1 rounded-lg font-extrabold">Edit</button>` : ''}
-                        </div>
+                    <div class="flex items-center gap-3 self-end md:self-auto">
+                        <span class="text-xs font-bold text-slate-500">${formatReadableDate(m.date)}</span>
+                        ${statusDropdown}
+                        ${state.isAdmin ? `<button onclick="editMilestone('${m.id}')" class="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 transition-colors text-xs font-bold">✏️</button>` : ''}
                     </div>
                 `;
                 container.appendChild(card);
             });
-            if (!todayBannerInserted) insertVerticalTodayBanner(container);
+
+            if (!todayBannerInserted) {
+                insertVerticalTodayBanner(container);
+            }
         }
 
         function insertVerticalTodayBanner(container) {
-            if (!container) return;
-            const separator = document.createElement('div');
-            separator.className = "ml-12 relative flex items-center justify-between bg-[#1E252D] text-white p-3.5 rounded-xl border-l-4 border-[#FDB813] shadow-md";
-            separator.innerHTML = `
+            const banner = document.createElement('div');
+            banner.className = "ml-12 relative my-4 py-2 px-4 bg-[#1E252D] text-[#FDB813] text-xs font-black uppercase tracking-widest rounded-xl shadow-md flex items-center justify-between border border-[#FDB813]/30";
+            banner.innerHTML = `
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-black uppercase tracking-widest text-[#FDB813]">YOU ARE HERE</span>
+                    <span class="h-2 w-2 rounded-full bg-[#FDB813] animate-pulse"></span>
+                    <span>Today (${formatReadableDate(CURRENT_DATE_STR)})</span>
                 </div>
-                <span class="text-xs font-extrabold px-2.5 py-0.5 bg-slate-800 rounded-md text-[#FDB813] border border-slate-700">
-                    ${formatReadableDate(CURRENT_DATE_STR)}
-                </span>
+                <span class="text-[10px] text-slate-300 font-semibold uppercase">Current Date Marker</span>
             `;
-            container.appendChild(separator);
+            container.appendChild(banner);
         }
 
-        function openMilestoneModal() { const m = document.getElementById('milestoneModal'); if (m) m.classList.remove('hidden'); }
-        function closeMilestoneModal() { const m = document.getElementById('milestoneModal'); if (m) m.classList.add('hidden'); }
+        function openMilestoneModal() { 
+            const m = document.getElementById('milestoneModal'); 
+            const modalDate = document.getElementById('modalDate');
+            const lockBadge = document.getElementById('dateLockBadge');
+            if (modalDate) modalDate.disabled = false;
+            if (lockBadge) lockBadge.classList.add('hidden');
+            if (m) m.classList.remove('hidden'); 
+        }
+        
+        function closeMilestoneModal() { 
+            const m = document.getElementById('milestoneModal'); 
+            if (m) m.classList.add('hidden'); 
+        }
 
         function editMilestone(id) {
             if (!state.isAdmin) return;
             const isAnchor = id.startsWith('anchor-');
+            const modalDate = document.getElementById('modalDate');
+            const lockBadge = document.getElementById('dateLockBadge');
+
             if (isAnchor) {
                 const currentOverride = state.anchorOverrides[id] || {};
                 const defaultTitles = {
@@ -1777,10 +1820,16 @@
                     'anchor-kickoff': 'Strategic Onboarding Kick-off',
                     'anchor-golive': 'System Go-Live'
                 };
+
+                let currentAnchorDate = state.discoveryDate;
+                if (id === 'anchor-golive') currentAnchorDate = state.goLiveDate;
+                else if (id === 'anchor-kickoff') currentAnchorDate = getOffsetMonths(state.goLiveDate, -4);
+                else if (id === 'anchor-signature') currentAnchorDate = getOffsetDate(getOffsetMonths(state.goLiveDate, -4), -42);
+                else if (id === 'anchor-discovery') currentAnchorDate = state.discoveryDate;
+
                 const mTitle = document.getElementById('modalTitle');
                 const mId = document.getElementById('modalId');
                 const mName = document.getElementById('modalName');
-                const mDate = document.getElementById('modalDate');
                 const mOwner = document.getElementById('modalOwner');
                 const mAtt = document.getElementById('modalAttachment');
                 const mStat = document.getElementById('modalStatus');
@@ -1788,7 +1837,14 @@
                 if (mTitle) mTitle.innerText = "Edit Core Anchor Milestone";
                 if (mId) mId.value = id;
                 if (mName) mName.value = (currentOverride.title && !currentOverride.title.startsWith('anchor-')) ? currentOverride.title : (defaultTitles[id] || id);
-                if (mDate) mDate.value = state.discoveryDate;
+                if (modalDate) {
+                    modalDate.value = currentAnchorDate;
+                    modalDate.disabled = false;
+                }
+                if (lockBadge) {
+                    lockBadge.innerText = "Linked Anchor Date (Updates Connected Schedule)";
+                    lockBadge.classList.remove('hidden');
+                }
                 if (mOwner) mOwner.value = currentOverride.owner || "";
                 if (mAtt) mAtt.value = "";
                 if (mStat) mStat.value = state.anchorStatuses[id] || 'Pending';
@@ -1798,7 +1854,6 @@
                 const mTitle = document.getElementById('modalTitle');
                 const mId = document.getElementById('modalId');
                 const mName = document.getElementById('modalName');
-                const mDate = document.getElementById('modalDate');
                 const mOwner = document.getElementById('modalOwner');
                 const mAtt = document.getElementById('modalAttachment');
                 const mStat = document.getElementById('modalStatus');
@@ -1806,7 +1861,11 @@
                 if (mTitle) mTitle.innerText = "Edit Custom Milestone";
                 if (mId) mId.value = m.id;
                 if (mName) mName.value = m.title;
-                if (mDate) mDate.value = m.date;
+                if (modalDate) {
+                    modalDate.value = m.date;
+                    modalDate.disabled = false;
+                }
+                if (lockBadge) lockBadge.classList.add('hidden');
                 if (mOwner) mOwner.value = m.owner;
                 if (mAtt) mAtt.value = m.attachment || "";
                 if (mStat) mStat.value = m.status || 'Pending';
@@ -1828,6 +1887,13 @@
                 if (id.startsWith('anchor-')) {
                     state.anchorOverrides[id] = { title, owner };
                     state.anchorStatuses[id] = status;
+                    
+                    if (date) {
+                        if (id === 'anchor-discovery') updateDiscoveryDate(date);
+                        else if (id === 'anchor-golive') updateGoLiveDate(date);
+                        else if (id === 'anchor-kickoff') updateKickOffDate(date);
+                        else if (id === 'anchor-signature') updateSignatureDate(date);
+                    }
                 } else {
                     const idx = state.customMilestones.findIndex(m => m.id === id);
                     if (idx !== -1) state.customMilestones[idx] = { id, title, date, owner, attachment, status };
@@ -1880,16 +1946,13 @@
         function toggleAdmin(forceState = null) {
             state.isAdmin = forceState !== null ? forceState : !state.isAdmin;
             const banner = document.getElementById('adminBanner');
-            const badge = document.getElementById('adminBadge');
             const addBtn = document.getElementById('addMilestoneBtn');
             
             if (state.isAdmin) {
                 if (banner) banner.classList.remove('hidden');
-                if (badge) badge.classList.remove('hidden');
                 if (addBtn) addBtn.classList.remove('hidden');
             } else {
                 if (banner) banner.classList.add('hidden');
-                if (badge) badge.classList.add('hidden');
                 if (addBtn) addBtn.classList.add('hidden');
             }
             renderTimeline();
