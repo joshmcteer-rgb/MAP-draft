@@ -163,8 +163,8 @@
         }
 
         .scenario-btn-dark {
-            padding: 0.3rem 0.6rem;
-            border-radius: 0.375rem;
+            padding: 0.35rem 0.7rem;
+            border-radius: 0.5rem;
             font-size: 0.65rem;
             font-weight: 800;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -248,17 +248,10 @@
         <div class="max-w-4xl mx-auto flex flex-col gap-5">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div>
-                    <div class="flex items-center gap-2.5">
-                        <span class="bg-[#FDB813]/10 text-[#E09F00] border border-[#FDB813]/25 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                            Joint Evaluation Portal
-                        </span>
-                        <span id="adminBadge" class="hidden bg-[#1E252D] text-[#FDB813] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                            Texada Admin Mode
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-2.5 mt-3">
-                        <span class="text-[#FDB813] font-black text-xl">▶</span>
-                        <h1 class="text-2xl md:text-3xl font-black text-[#1E252D] tracking-tight uppercase">TEXADA EVALUATION PLAN</h1>
+                    <div class="flex items-center gap-3 mt-3">
+                        <img src="https://cdn.news.ararental.org/wp-content/uploads/2024/08/05161505/Texada-Software-thumbnail-600x338.jpg" alt="Texada Logo" class="h-14 md:h-20 w-auto object-contain rounded-md">
+                        <div class="h-10 md:h-14 w-px bg-slate-200"></div>
+                        <h1 class="text-2xl md:text-3xl font-black text-[#1E252D] tracking-tight uppercase">EVALUATION PLAN</h1>
                     </div>
                     <p id="headerSubtitle" class="text-slate-500 text-sm mt-1">Co-developed timeline mapping for Texada Prospect</p>
                 </div>
@@ -298,10 +291,11 @@
         <!-- TIMELINE TAB CONTENT WRAPPER -->
         <div id="timelineContentWrapper" class="space-y-8">
             <div id="emptyStatePanel" class="bg-white border border-slate-200 rounded-3xl p-8 md:p-12 text-center space-y-8 shadow-sm">
-                <div class="max-w-md mx-auto space-y-2">
+                <div class="max-w-md mx-auto space-y-3 flex flex-col items-center">
+                    <img src="https://cdn.news.ararental.org/wp-content/uploads/2024/08/05161505/Texada-Software-thumbnail-600x338.jpg" alt="Texada Software" class="h-16 md:h-20 w-auto object-contain mb-1 rounded-lg">
                     <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight uppercase">Texada Workspace Gateway</h2>
                     <p class="text-sm text-slate-500 leading-relaxed">
-                        Build a collaborative evaluation roadmap and quantify your operational ROI, or search to open an existing joint workspace.
+                        Design a collaborative evaluation roadmap and project ROI for your team, or search to open an existing evaluation workspace.
                     </p>
                 </div>
 
@@ -339,7 +333,7 @@
 
                     <div id="gatewayTabExistingContent" class="hidden p-6 text-left space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search Prospect Database (Cloud Only)</label>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search Prospect Database</label>
                             <div class="relative">
                                 <input type="text" id="dbSearchInput" oninput="handleDbSearch(this.value)" placeholder="Type company name or ID..." class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
                                 <span class="absolute left-3.5 top-3 text-slate-400 text-sm">🔍</span>
@@ -347,7 +341,7 @@
                         </div>
 
                         <div id="dbSearchResults" class="space-y-2 max-h-56 overflow-y-auto border border-slate-200 bg-white rounded-xl p-2 min-h-[100px] flex flex-col justify-center">
-                            <p class="text-xs text-slate-400 text-center font-medium">Type above to query Supabase cloud database...</p>
+                            <p class="text-xs text-slate-400 text-center font-medium">Type above to query prospect database...</p>
                         </div>
 
                         <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-center justify-between">
@@ -381,7 +375,7 @@
                     </div>
                     <div class="space-y-1 p-2 border-l-0 sm:border-l border-slate-150">
                         <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Feasibility Risk</span>
-                        <span id="metricRisk" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 uppercase tracking-wide">Calculable</span>
+                        <span id="metricRisk" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wide">Low</span>
                     </div>
                 </div>
                 
@@ -874,28 +868,40 @@
         }
 
         function getOffsetDate(baseDateStr, daysOffset) {
-            const date = new Date(baseDateStr + "T00:00:00");
+            const dateParts = baseDateStr.split('-');
+            const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
             date.setDate(date.getDate() + daysOffset);
-            return date.toISOString().split('T')[0];
+            
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function getOffsetMonths(baseDateStr, monthsOffset) {
-            const date = new Date(baseDateStr + "T00:00:00");
+            const dateParts = baseDateStr.split('-');
+            const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
             date.setMonth(date.getMonth() + monthsOffset);
-            return date.toISOString().split('T')[0];
+            
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function formatReadableDate(dateStr) {
             if (!dateStr) return "TBD";
             const options = { month: 'short', day: 'numeric', year: 'numeric' };
-            const date = new Date(dateStr + "T00:00:00");
+            const dateParts = dateStr.split('-');
+            const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
             return date.toLocaleDateString('en-US', options);
         }
 
         function formatReadableDateShort(dateStr) {
             if (!dateStr) return "TBD";
             const options = { month: 'short', day: 'numeric' };
-            const date = new Date(dateStr + "T00:00:00");
+            const dateParts = dateStr.split('-');
+            const date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
             return date.toLocaleDateString('en-US', options);
         }
 
@@ -960,7 +966,7 @@
             if (!container) return;
 
             if (!query || query.trim().length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 text-center font-medium">Type above to query Supabase cloud database...</p>';
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center font-medium">Type above to query prospect database...</p>';
                 return;
             }
 
@@ -1083,11 +1089,11 @@
 
             const currentUte = parseFloat(document.getElementById('dollar-curr')?.value || 0);
 
-            // Exact agreed scenario defaults:
-            // Dollar Ute: 5.0, 7.5, 10.0
-            // Billing: 25, 50, 75
-            // Tech: 20, 30, 40
-            // Fuel: 10, 20, 30
+            // Agreed scenario defaults:
+            // Dollar Ute Lift: +5.0%, +7.5%, +10.0%
+            // Billing Efficiency: 25%, 50%, 75%
+            // Tech Productivity: 20m, 30m, 40m / Day
+            // Fuel Recovery: 10%, 20%, 30%
             let uteLift = 7.5;
             let fuelGain = 20;
             let billingGain = 50;
@@ -1292,7 +1298,6 @@
         const calculateROI = () => {
             const oec = getRawValue('oec');
             const rev = getRawValue('annual-rev');
-            const maint = getRawValue('m-spend');
             const targetUte = parseFloat(document.getElementById('dollar-target')?.value || 0);
             const fuelExp = getRawValue('fuel-expense');
             const fuelGainPercent = parseFloat(document.getElementById('fuel-percent-gain')?.value || 0);
@@ -1305,16 +1310,20 @@
             const techReclaim = parseFloat(document.getElementById('staff-serv-daily-reclaim')?.value || 0);
             const techRecovery = parseFloat(document.getElementById('staff-serv-recovery')?.value || 0);
 
-            const actualNet = Math.max(0, rev - maint);
+            // Corrected Revenue Lift math: Target Revenue Potential minus Current Gross Revenue
             const targetPotential = (targetUte / 100) * oec;
-            const revGain = Math.max(0, targetPotential - actualNet);
+            const revGain = Math.max(0, targetPotential - rev);
+            
             const fuelRecoveryVal = fuelExp * (fuelGainPercent / 100);
             const damageRecoveryVal = (monthlyReturns * 12) * 0.025 * 1000;
             const totalRecovery = fuelRecoveryVal + damageRecoveryVal;
+            
             const adminHrsReclaimed = accCount * accHrs * (accGain / 100) * 52;
             const adminVal = adminHrsReclaimed * 35;
+            
             const shopHrsReclaimed = techCount * (techReclaim / 60) * 5 * 52;
             const shopVal = shopHrsReclaimed * techRate * (techRecovery / 100);
+            
             const total = revGain + totalRecovery + adminVal + shopVal;
 
             const elTotal = document.getElementById('roi-total-val');
@@ -1337,7 +1346,6 @@
         const updateUte = () => {
             const oec = getRawValue('oec');
             const rev = getRawValue('annual-rev');
-            const maint = getRawValue('m-spend');
             const dollarCurrEl = document.getElementById('dollar-curr');
             if (!dollarCurrEl) return;
 
@@ -1345,9 +1353,10 @@
                 dollarCurrEl.value = "";
                 return;
             }
-            const base = ((rev - maint) / oec) * 100;
-            const curr = base + 2.18;
+            // Standard Dollar UTE Formula = (Annual Rental Revenue / Fleet OEC) * 100
+            const curr = (rev / oec) * 100;
             dollarCurrEl.value = curr.toFixed(2);
+            
             const targetEl = document.getElementById('dollar-target');
             if (targetEl && targetEl.dataset.isManual !== "true") {
                 targetEl.value = (curr + 7.5).toFixed(2);
@@ -1469,24 +1478,73 @@
             if (hSubtitle) hSubtitle.innerHTML = state.prospectName ? `Co-developed timeline mapping for <strong>${state.prospectName}</strong>` : "Co-developed timeline mapping for Texada Prospect";
 
             const goLive = state.goLiveDate;
-            const kickOff = getOffsetMonths(goLive, -4); 
-            const signature = getOffsetDate(kickOff, -35); 
+            const kickOff = getOffsetMonths(goLive, -4); // 4 months required prior to Go-Live
+            const signature = getOffsetDate(kickOff, -42); // Exactly 6 weeks (42 days) required prior to Kick-Off
             const discovery = state.discoveryDate;
 
-            const goLiveDateObj = new Date(goLive + "T00:00:00");
-            const today = new Date(CURRENT_DATE_STR + "T00:00:00");
+            const goLiveParts = goLive.split('-');
+            const goLiveDateObj = new Date(parseInt(goLiveParts[0]), parseInt(goLiveParts[1]) - 1, parseInt(goLiveParts[2]));
+            const todayParts = CURRENT_DATE_STR.split('-');
+            const today = new Date(parseInt(todayParts[0]), parseInt(todayParts[1]) - 1, parseInt(todayParts[2]));
+            
             const diffToGoLive = Math.ceil((goLiveDateObj - today) / (1000 * 60 * 60 * 24));
             
             const countdownEl = document.getElementById('metricCountdown');
             if (countdownEl) countdownEl.innerText = diffToGoLive > 0 ? diffToGoLive : "0";
 
+            const discoveryParts = discovery.split('-');
+            const discoveryDateObj = new Date(parseInt(discoveryParts[0]), parseInt(discoveryParts[1]) - 1, parseInt(discoveryParts[2]));
+            const totalDurationDays = Math.ceil((goLiveDateObj - discoveryDateObj) / (1000 * 60 * 60 * 24));
+
+            const signatureParts = signature.split('-');
+            const signatureDateObj = new Date(parseInt(signatureParts[0]), parseInt(signatureParts[1]) - 1, parseInt(signatureParts[2]));
+            const evalDays = Math.ceil((signatureDateObj - discoveryDateObj) / (1000 * 60 * 60 * 24));
+
+            const riskEl = document.getElementById('metricRisk');
+            const realityAlert = document.getElementById('realityCheckAlert');
+            const realityMsg = document.getElementById('realityCheckMessage');
+
+            if (riskEl) {
+                if (totalDurationDays >= 190 && evalDays >= 28) {
+                    // Low Risk: Full 4+ weeks evaluation, 6 weeks to kickoff, 4 months implementation
+                    riskEl.innerText = "Low";
+                    riskEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase tracking-wide";
+                    if (realityAlert) realityAlert.classList.add('hidden');
+                } else if (totalDurationDays >= 150) {
+                    // Moderate Risk: Compressed evaluation phase (14 to 27 days), but onboarding & implementation are intact
+                    riskEl.innerText = "Moderate";
+                    riskEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-200 uppercase tracking-wide";
+                    if (realityAlert) realityAlert.classList.add('hidden');
+                } else {
+                    // High Risk: Total time under 150 days severely compresses evaluation (<14 days) or implementation (<4 months)
+                    riskEl.innerText = "High";
+                    riskEl.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200 uppercase tracking-wide";
+                    if (realityAlert) {
+                        realityAlert.classList.remove('hidden');
+                        if (realityMsg) realityMsg.innerText = `Target Go-Live leaves only ${totalDurationDays} days from Discovery. A standard deployment requires at least 190 days (4+ weeks evaluation, 6 weeks between Signature and Kick-off, and 4 months implementation). Evaluation window is currently compressed to ${evalDays > 0 ? evalDays : 0} days.`;
+                    }
+                }
+            }
+
             const companyName = state.prospectName || 'Texada Prospect';
 
+            const defaultAnchorTitles = {
+                'anchor-discovery': 'Strategic Discovery Call',
+                'anchor-signature': 'Contract Finalization & Signed',
+                'anchor-kickoff': 'Strategic Onboarding Kick-off',
+                'anchor-golive': 'System Go-Live'
+            };
+
+            const getAnchorTitle = (id, fallback) => {
+                const t = state.anchorOverrides[id]?.title;
+                return (t && !t.startsWith('anchor-')) ? t : fallback;
+            };
+
             const anchors = [
-                { id: 'anchor-discovery', title: state.anchorOverrides['anchor-discovery']?.title || 'Strategic Discovery Call', date: discovery, owner: state.anchorOverrides['anchor-discovery']?.owner || `Texada & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-discovery'] || 'Completed', icon: `<svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-400', shortName: 'Discovery' },
-                { id: 'anchor-signature', title: state.anchorOverrides['anchor-signature']?.title || 'Contract Finalization & Signed', date: signature, owner: state.anchorOverrides['anchor-signature']?.owner || companyName, isAnchor: true, status: state.anchorStatuses['anchor-signature'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#FDB813]', shortName: 'Contract' },
-                { id: 'anchor-kickoff', title: state.anchorOverrides['anchor-kickoff']?.title || 'Strategic Onboarding Kick-off', date: kickOff, owner: state.anchorOverrides['anchor-kickoff']?.owner || `Texada Implementation Team & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-kickoff'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#1E252D]', shortName: 'Kick-off' },
-                { id: 'anchor-golive', title: state.anchorOverrides['anchor-golive']?.title || 'Platform Production Go-Live 🎉', date: goLive, owner: state.anchorOverrides['anchor-golive']?.owner || `Texada & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-golive'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`, colorTheme: 'from-white to-white border-[#FDB813] border-l-4 border-l-[#FDB813] font-bold', shortName: 'Launch' }
+                { id: 'anchor-discovery', title: getAnchorTitle('anchor-discovery', 'Strategic Discovery Call'), date: discovery, owner: state.anchorOverrides['anchor-discovery']?.owner || `Texada & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-discovery'] || 'Completed', icon: `<svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-400', shortName: 'Discovery' },
+                { id: 'anchor-signature', title: getAnchorTitle('anchor-signature', 'Contract Finalization & Signed'), date: signature, owner: state.anchorOverrides['anchor-signature']?.owner || companyName, isAnchor: true, status: state.anchorStatuses['anchor-signature'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#FDB813]', shortName: 'Contract' },
+                { id: 'anchor-kickoff', title: getAnchorTitle('anchor-kickoff', 'Strategic Onboarding Kick-off'), date: kickOff, owner: state.anchorOverrides['anchor-kickoff']?.owner || `Texada Implementation Team & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-kickoff'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#1E252D]', shortName: 'Kick-off' },
+                { id: 'anchor-golive', title: getAnchorTitle('anchor-golive', 'System Go-Live'), date: goLive, owner: state.anchorOverrides['anchor-golive']?.owner || `Texada & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-golive'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`, colorTheme: 'from-white to-white border-[#FDB813] border-l-4 border-l-[#FDB813] font-bold', shortName: 'Launch' }
             ];
 
             let allMilestones = [...anchors];
@@ -1499,7 +1557,11 @@
                 });
             });
 
-            allMilestones.sort((a, b) => new Date(a.date + "T00:00:00") - new Date(b.date + "T00:00:00"));
+            allMilestones.sort((a, b) => {
+                const aP = a.date.split('-');
+                const bP = b.date.split('-');
+                return new Date(parseInt(aP[0]), parseInt(aP[1]) - 1, parseInt(aP[2])) - new Date(parseInt(bP[0]), parseInt(bP[1]) - 1, parseInt(bP[2]));
+            });
 
             const completedCount = allMilestones.filter(m => m.status === 'Completed').length;
             const progressEl = document.getElementById('metricProgress');
@@ -1511,8 +1573,14 @@
             if (horizontalTrack) {
                 horizontalTrack.innerHTML = '';
                 
-                const milestoneTimes = allMilestones.map(m => new Date(m.date + "T00:00:00").getTime());
-                const todayTime = new Date(CURRENT_DATE_STR + "T00:00:00").getTime();
+                const milestoneTimes = allMilestones.map(m => {
+                    const p = m.date.split('-');
+                    return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])).getTime();
+                });
+                
+                const todayParts = CURRENT_DATE_STR.split('-');
+                const todayTime = new Date(parseInt(todayParts[0]), parseInt(todayParts[1]) - 1, parseInt(todayParts[2])).getTime();
+                
                 const minTime = Math.min(...milestoneTimes);
                 const maxTime = Math.max(...milestoneTimes);
                 const totalDuration = maxTime - minTime;
@@ -1520,7 +1588,8 @@
 
                 // Hybrid Rank + Date Ratio spacing algorithm for clean visual balance across the track
                 let positions = allMilestones.map((m, idx) => {
-                    const mTime = new Date(m.date + "T00:00:00").getTime();
+                    const p = m.date.split('-');
+                    const mTime = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])).getTime();
                     const linearPct = totalDuration > 0 ? ((mTime - minTime) / totalDuration) * 80 + 10 : 50;
                     const rankPct = nMilestones > 1 ? (idx / (nMilestones - 1)) * 80 + 10 : 50;
                     // Blend 75% rank distribution with 25% date ratio to balance spacing and eliminate disproportionate gaps
@@ -1630,7 +1699,10 @@
             let todayBannerInserted = false;
 
             allMilestones.forEach((m) => {
-                if (!todayBannerInserted && today <= new Date(m.date + "T00:00:00")) {
+                const mP = m.date.split('-');
+                const mDateObj = new Date(parseInt(mP[0]), parseInt(mP[1]) - 1, parseInt(mP[2]));
+                
+                if (!todayBannerInserted && today <= mDateObj) {
                     insertVerticalTodayBanner(container);
                     todayBannerInserted = true;
                 }
@@ -1699,6 +1771,12 @@
             const isAnchor = id.startsWith('anchor-');
             if (isAnchor) {
                 const currentOverride = state.anchorOverrides[id] || {};
+                const defaultTitles = {
+                    'anchor-discovery': 'Strategic Discovery Call',
+                    'anchor-signature': 'Contract Finalization & Signed',
+                    'anchor-kickoff': 'Strategic Onboarding Kick-off',
+                    'anchor-golive': 'System Go-Live'
+                };
                 const mTitle = document.getElementById('modalTitle');
                 const mId = document.getElementById('modalId');
                 const mName = document.getElementById('modalName');
@@ -1709,7 +1787,7 @@
 
                 if (mTitle) mTitle.innerText = "Edit Core Anchor Milestone";
                 if (mId) mId.value = id;
-                if (mName) mName.value = currentOverride.title || id;
+                if (mName) mName.value = (currentOverride.title && !currentOverride.title.startsWith('anchor-')) ? currentOverride.title : (defaultTitles[id] || id);
                 if (mDate) mDate.value = state.discoveryDate;
                 if (mOwner) mOwner.value = currentOverride.owner || "";
                 if (mAtt) mAtt.value = "";
