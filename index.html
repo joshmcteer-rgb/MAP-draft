@@ -222,6 +222,16 @@
                 fuelPercentCurr: "", fuelPercentGain: "20", returnsMonth: "", staffAccCount: "",
                 staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
                 staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
+            },
+            alignment: {
+                businessDrivers: "",
+                costOfInaction: "",
+                execSponsorOutcome: "",
+                opsOutcome: "",
+                financeOutcome: "",
+                itOutcome: "",
+                decisionCriteria: "",
+                governanceProcess: ""
             }
         };
     </script>
@@ -274,11 +284,12 @@
                 </div>
             </div>
 
-            <div class="flex border-b border-slate-200 gap-1 text-sm font-bold">
-                <button id="tabTimelineBtn" onclick="switchTab('timeline')" class="pb-3 px-4 border-b-2 border-[#FDB813] text-[#1E252D] transition-all flex items-center gap-2 focus:outline-none">
+            <!-- Header Navigation Tabs -->
+            <div class="flex border-b border-slate-200 gap-1 text-sm font-bold overflow-x-auto">
+                <button id="tabTimelineBtn" onclick="switchTab('timeline')" class="pb-3 px-4 border-b-2 border-[#FDB813] text-[#1E252D] transition-all flex items-center gap-2 focus:outline-none whitespace-nowrap">
                     Plan Timeline
                 </button>
-                <button id="tabRoiBtn" onclick="switchTab('roi')" class="pb-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-[#1E252D] transition-all flex items-center gap-2 focus:outline-none">
+                <button id="tabRoiBtn" onclick="switchTab('roi')" class="pb-3 px-4 border-b-2 border-transparent text-slate-400 hover:text-[#1E252D] transition-all flex items-center gap-2 focus:outline-none whitespace-nowrap">
                     Business ROI Calculator
                 </button>
             </div>
@@ -340,9 +351,7 @@
                             </div>
                         </div>
 
-                        <div id="dbSearchResults" class="space-y-2 max-h-56 overflow-y-auto border border-slate-200 bg-white rounded-xl p-2 min-h-[100px] flex flex-col justify-center">
-                            <p class="text-xs text-slate-400 text-center font-medium">Type above to query prospect database...</p>
-                        </div>
+                        <div id="dbSearchResults" class="hidden space-y-2 max-h-56 overflow-y-auto border border-slate-200 bg-white rounded-xl p-2"></div>
 
                         <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-center justify-between">
                             <label class="text-xs font-semibold text-slate-600">Open with Admin Rights</label>
@@ -963,6 +972,13 @@
                     staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
                 };
             }
+            if (!state.alignment) {
+                state.alignment = {
+                    businessDrivers: "", costOfInaction: "", execSponsorOutcome: "",
+                    opsOutcome: "", financeOutcome: "", itOutcome: "",
+                    decisionCriteria: "", governanceProcess: ""
+                };
+            }
         }
 
         function showToast(message, type = "success") {
@@ -1004,10 +1020,12 @@
             if (!container) return;
 
             if (!query || query.trim().length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400 text-center font-medium">Type above to query prospect database...</p>';
+                container.innerHTML = '';
+                container.classList.add('hidden');
                 return;
             }
 
+            container.classList.remove('hidden');
             container.innerHTML = '<p class="text-xs text-amber-600 text-center font-medium animate-pulse">Querying database...</p>';
 
             searchDebounceTimer = setTimeout(async () => {
@@ -1096,7 +1114,9 @@
         }
 
         function exportPDF() {
-            const element = state.activeTab === 'timeline' ? document.getElementById('timelineWorkspace') : document.getElementById('roiContentWrapper');
+            let element = document.getElementById('timelineWorkspace');
+            if (state.activeTab === 'roi') element = document.getElementById('roiContentWrapper');
+            
             if (!element) return;
             const filename = `Texada_${state.prospectName || 'Evaluation'}_${state.activeTab.toUpperCase()}_Plan.pdf`;
             const opt = {
@@ -1239,6 +1259,7 @@
                     anchor_overrides: state.anchorOverrides,
                     anchor_statuses: state.anchorStatuses,
                     roi: state.roi,
+                    alignment: state.alignment,
                     updated_at: new Date().toISOString()
                 })
                 .then(({ error }) => {
@@ -1273,6 +1294,7 @@
                         state.anchorOverrides = data.anchor_overrides || {};
                         state.anchorStatuses = data.anchor_statuses || {};
                         state.roi = data.roi || {};
+                        state.alignment = data.alignment || {};
                     }
                     ensureStateSafety();
                     switchTab(state.activeTab || 'timeline');
@@ -1286,27 +1308,31 @@
             state.activeTab = tab;
             const timelineBtn = document.getElementById('tabTimelineBtn');
             const roiBtn = document.getElementById('tabRoiBtn');
+
             const timelineWrapper = document.getElementById('timelineContentWrapper');
             const roiWrapper = document.getElementById('roiContentWrapper');
             const headerPickers = document.getElementById('headerDatePickers');
 
             if (!timelineBtn || !roiBtn || !timelineWrapper || !roiWrapper) return;
 
+            // Reset all tab styles
+            [timelineBtn, roiBtn].forEach(btn => {
+                btn.classList.remove('border-[#FDB813]', 'text-[#1E252D]');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            });
+
+            // Hide all content wrappers
+            [timelineWrapper, roiWrapper].forEach(w => w.classList.add('hidden'));
+
             if (tab === 'roi') {
-                timelineBtn.classList.remove('border-[#FDB813]', 'text-[#1E252D]');
-                timelineBtn.classList.add('border-transparent', 'text-slate-400');
                 roiBtn.classList.remove('border-transparent', 'text-slate-400');
                 roiBtn.classList.add('border-[#FDB813]', 'text-[#1E252D]');
-                timelineWrapper.classList.add('hidden');
                 roiWrapper.classList.remove('hidden');
                 if (headerPickers) headerPickers.classList.add('hidden');
                 calculateROI();
             } else {
-                roiBtn.classList.remove('border-[#FDB813]', 'text-[#1E252D]');
-                roiBtn.classList.add('border-transparent', 'text-slate-400');
                 timelineBtn.classList.remove('border-transparent', 'text-slate-400');
                 timelineBtn.classList.add('border-[#FDB813]', 'text-[#1E252D]');
-                roiWrapper.classList.add('hidden');
                 timelineWrapper.classList.remove('hidden');
                 if (state.goLiveDate && state.discoveryDate && headerPickers) {
                     headerPickers.classList.remove('hidden');
