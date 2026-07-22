@@ -8,8 +8,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS Client Library SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- html2pdf.js Bundle for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- Montserrat & Inter Font families for clean enterprise typography -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -17,7 +20,7 @@
         .font-montserrat {
             font-family: 'Montserrat', sans-serif;
         }
-        /* Custom scrollbar for beautiful dashboard aesthetics */
+        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -86,7 +89,7 @@
             visibility: hidden;
             opacity: 0;
             position: absolute;
-            background-color: #12161A; /* Premium dark navy background from images */
+            background-color: #12161A;
             color: #fff;
             text-align: left;
             padding: 1.5rem;
@@ -159,12 +162,69 @@
             align-items: center;
         }
 
-        .count-up {
-            transition: all 0.5s ease-out;
+        .scenario-btn-dark {
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.375rem;
+            font-size: 0.65rem;
+            font-weight: 800;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .scenario-btn-dark.active {
+            background-color: #FDB813;
+            color: #1E252D;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .scenario-btn-dark.inactive {
+            background-color: transparent;
+            color: #94A3B8;
+        }
+
+        .scenario-btn-dark.inactive:hover {
+            color: #FFFFFF;
+            background-color: rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
 <body class="bg-[#F8FAFC] text-[#1E252D] min-h-screen antialiased flex flex-col">
+
+    <script>
+        const SUPABASE_URL = "https://lufzkqlpmyzhaovldxjx.supabase.co"; 
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1ZnprcWxwbXl6aGFvdmxkeGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMTg0NDIsImV4cCI6MjA5OTc5NDQ0Mn0.isbnVteRQrd6CHEJrWoCDYncQT8jYQgo8-UvLf7hdls";     
+        const CURRENT_DATE_STR = new Date().toISOString().split('T')[0];
+        
+        let supabaseInstance = null;
+        let currentProspectId = "";
+        let selectedProspectFromSearch = null;
+        let searchDebounceTimer = null;
+        let isMaintManual = false; 
+        let activeScenario = "target";
+
+        let state = {
+            prospectName: "",
+            goLiveDate: "", 
+            discoveryDate: "", 
+            customMilestones: [],
+            anchorOverrides: {}, 
+            anchorStatuses: {
+                'anchor-discovery': 'Completed',
+                'anchor-signature': 'Pending',
+                'anchor-kickoff': 'Pending',
+                'anchor-golive': 'Pending'
+            },
+            isAdmin: false,
+            activeTab: 'timeline',
+            roi: {
+                oec: "", annualRev: "", mSpend: "", dollarTarget: "", fuelExpense: "",
+                fuelPercentCurr: "", fuelPercentGain: "20", returnsMonth: "", staffAccCount: "",
+                staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
+                staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
+            }
+        };
+    </script>
 
     <!-- Texada Admin Indicator Banner -->
     <div id="adminBanner" class="hidden bg-[#1E252D] border-b border-[#FDB813]/40 text-white px-6 py-3.5 text-center text-sm font-semibold relative z-50 shadow-md flex items-center justify-center gap-3">
@@ -200,17 +260,23 @@
                         <span class="text-[#FDB813] font-black text-xl">▶</span>
                         <h1 class="text-2xl md:text-3xl font-black text-[#1E252D] tracking-tight uppercase">TEXADA EVALUATION PLAN</h1>
                     </div>
-                    <p id="headerSubtitle" class="text-slate-500 text-sm mt-1">Co-developed timeline mapping for Acme Corp & Partners</p>
+                    <p id="headerSubtitle" class="text-slate-500 text-sm mt-1">Co-developed timeline mapping for Texada Prospect</p>
                 </div>
                 
-                <div id="headerDatePickers" class="hidden flex flex-wrap gap-4 bg-[#F8FAFC] p-4 rounded-2xl border border-slate-200 w-full sm:w-auto">
-                    <div class="flex-1 min-w-[140px]">
-                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Discovery Date</label>
-                        <input type="date" id="headerDiscoveryInput" onchange="updateDiscoveryDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] focus:border-transparent w-full">
-                    </div>
-                    <div class="flex-1 min-w-[140px]">
-                        <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Target Go-Live</label>
-                        <input type="date" id="headerGoLiveInput" onchange="updateGoLiveDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] focus:border-transparent w-full">
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+                    <button onclick="exportPDF()" class="bg-[#1E252D] hover:bg-slate-800 text-[#FDB813] border border-[#FDB813]/30 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-2">
+                        <span>📄</span> Export PDF
+                    </button>
+
+                    <div id="headerDatePickers" class="hidden flex flex-wrap gap-4 bg-[#F8FAFC] p-3 rounded-2xl border border-slate-200 w-full sm:w-auto">
+                        <div class="flex-1 min-w-[130px]">
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Discovery Date</label>
+                            <input type="date" id="headerDiscoveryInput" onchange="updateDiscoveryDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] w-full">
+                        </div>
+                        <div class="flex-1 min-w-[130px]">
+                            <label class="block text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Target Go-Live</label>
+                            <input type="date" id="headerGoLiveInput" onchange="updateGoLiveDate(this.value)" class="bg-white text-[#1E252D] border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#FDB813] w-full">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -231,28 +297,24 @@
         
         <!-- TIMELINE TAB CONTENT WRAPPER -->
         <div id="timelineContentWrapper" class="space-y-8">
-            <!-- INITIAL EMPTY STATE / GATEWAY HUB PANEL -->
             <div id="emptyStatePanel" class="bg-white border border-slate-200 rounded-3xl p-8 md:p-12 text-center space-y-8 shadow-sm">
                 <div class="max-w-md mx-auto space-y-2">
                     <h2 class="text-xl md:text-2xl font-extrabold text-[#1E252D] tracking-tight uppercase">Texada Workspace Gateway</h2>
                     <p class="text-sm text-slate-500 leading-relaxed">
-                        Create a brand-new customer alignment roadmap blueprint or open an existing saved evaluation workspace.
+                        Create a brand-new customer alignment roadmap blueprint or search the Supabase cloud database to open an existing saved evaluation workspace.
                     </p>
                 </div>
 
-                <!-- Dual Control Gateway Card -->
                 <div class="max-w-md mx-auto bg-[#F8FAFC] rounded-2xl border border-slate-200 overflow-hidden shadow-inner">
-                    <!-- Gateway Switcher -->
                     <div class="grid grid-cols-2 border-b border-slate-200 bg-slate-100 text-xs font-bold text-slate-500">
                         <button id="gatewayTabNewBtn" onclick="switchGatewayTab('new')" class="py-3.5 px-4 border-r border-slate-200 bg-white text-[#1E252D] focus:outline-none uppercase tracking-wider font-extrabold">
                             ➕ Create New Plan
                         </button>
                         <button id="gatewayTabExistingBtn" onclick="switchGatewayTab('existing')" class="py-3.5 px-4 hover:bg-slate-50 hover:text-slate-700 transition-all focus:outline-none uppercase tracking-wider font-extrabold">
-                            📂 Open Existing Plan
+                            🔍 Search Database
                         </button>
                     </div>
 
-                    <!-- Gateway Tab: Create New Plan -->
                     <div id="gatewayTabNewContent" class="p-6 text-left space-y-4">
                         <div>
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Company Name (Prospect)</label>
@@ -275,65 +337,33 @@
                         </div>
                     </div>
 
-                    <!-- Gateway Tab: Open Existing Plan -->
                     <div id="gatewayTabExistingContent" class="hidden p-6 text-left space-y-4">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Select Active Prospect Directory</label>
-                            <select id="existingProspectDropdown" class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813] font-semibold">
-                                <option value="">-- Connecting to Database... --</option>
-                            </select>
-                        </div>
-                        <div class="bg-white border border-slate-200 p-4 rounded-xl space-y-2">
-                            <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Security Credentials</span>
-                            <div class="flex items-center justify-between gap-4">
-                                <label class="text-xs font-semibold text-slate-600">Open with Admin (Edit) Rights</label>
-                                <input type="checkbox" id="existingProspectAdminToggle" checked class="h-4 w-4 text-[#FDB813] focus:ring-[#FDB813] border-slate-300 rounded">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Search Prospect Database (Cloud Only)</label>
+                            <div class="relative">
+                                <input type="text" id="dbSearchInput" oninput="handleDbSearch(this.value)" placeholder="Type company name or ID..." class="w-full bg-white text-[#1E252D] border border-slate-300 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FDB813]">
+                                <span class="absolute left-3.5 top-3 text-slate-400 text-sm">🔍</span>
                             </div>
                         </div>
-                        <div class="pt-2">
-                            <button onclick="launchExistingProspect()" class="w-full bg-[#1E252D] hover:bg-slate-800 text-[#FDB813] font-black py-3.5 px-6 rounded-xl text-sm transition-all shadow-md">
-                                Open Selected Blueprint
-                            </button>
+
+                        <div id="dbSearchResults" class="space-y-2 max-h-56 overflow-y-auto border border-slate-200 bg-white rounded-xl p-2 min-h-[100px] flex flex-col justify-center">
+                            <p class="text-xs text-slate-400 text-center font-medium">Type above to query Supabase cloud database...</p>
                         </div>
+
+                        <div class="bg-white border border-slate-200 p-3 rounded-xl flex items-center justify-between">
+                            <label class="text-xs font-semibold text-slate-600">Open with Admin Rights</label>
+                            <input type="checkbox" id="existingProspectAdminToggle" checked class="h-4 w-4 text-[#FDB813] focus:ring-[#FDB813] border-slate-300 rounded">
+                        </div>
+
+                        <button onclick="launchSelectedProspect()" id="launchProspectBtn" disabled class="w-full bg-slate-300 text-slate-500 cursor-not-allowed font-black py-3 px-6 rounded-xl text-sm transition-all shadow-sm">
+                            Open Selected Blueprint
+                        </button>
                     </div>
-                </div>
-
-                <!-- Troubleshooting SQL Setup Guide -->
-                <div id="setupHelpBox" class="hidden text-left bg-amber-50 border border-amber-200 rounded-2xl p-5 max-w-md mx-auto text-xs space-y-3">
-                    <div class="flex items-center gap-2">
-                        <span class="text-base">💡</span>
-                        <h4 class="font-extrabold text-amber-900 uppercase tracking-wide">First-Time Setup Action Required</h4>
-                    </div>
-                    <p class="text-amber-800 leading-relaxed font-semibold">
-                        Your Supabase project is active, but we need to create the table structure and grant public permissions. Run this code inside your **Supabase SQL Editor** to construct the schema:
-                    </p>
-                    <pre class="bg-[#1E252D] text-amber-300 p-3 rounded-lg overflow-x-auto text-[10px] font-mono leading-relaxed select-all">
--- 1. Create evaluation roadmap table
-CREATE TABLE IF NOT EXISTS evaluations (
-  id TEXT PRIMARY KEY,
-  prospect_name TEXT NOT NULL,
-  discovery_date DATE,
-  go_live_date DATE,
-  custom_milestones JSONB DEFAULT '[]'::JSONB,
-  anchor_overrides JSONB DEFAULT '{}'::JSONB,
-  anchor_statuses JSONB DEFAULT '{}'::JSONB,
-  roi JSONB DEFAULT '{}'::JSONB,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 2. DISABLE RLS entirely to allow public writes/reads (highly recommended for evaluation sandbox)
-ALTER TABLE evaluations DISABLE ROW LEVEL SECURITY;
-
--- 3. Enable Postgres realtime settings
-ALTER TABLE evaluations REPLICA IDENTITY FULL;
-ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 </div>
             </div>
 
             <!-- TIMELINE WORKSPACE -->
             <div id="timelineWorkspace" class="hidden space-y-8">
-
-                <!-- Real-time Metrics & KPIs Banner -->
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white border border-slate-200/80 p-5 rounded-3xl shadow-sm">
                     <div class="space-y-1 p-2">
                         <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">Launch Countdown</span>
@@ -355,7 +385,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     </div>
                 </div>
                 
-                <!-- Reality Check Alert -->
                 <div id="realityCheckAlert" class="hidden bg-rose-50 border border-rose-200 p-5 rounded-2xl flex items-start gap-4 shadow-sm">
                     <span class="text-2xl mt-0.5">⚠️</span>
                     <div>
@@ -364,12 +393,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     </div>
                 </div>
 
-                <!-- Horizontal Summary Infographic Overview -->
                 <div class="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm space-y-4">
                     <div class="flex justify-between items-center pb-2 border-b border-slate-100">
                         <div>
                             <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Roadmap Overview</h3>
-                            <p class="text-[11px] text-slate-500">Proportionally scaled chronological bird's-eye view. Click nodes to jump to details.</p>
+                            <p class="text-[11px] text-slate-500">Proportionally scaled chronological bird's-eye view.</p>
                         </div>
                         <div class="flex gap-4 text-[10px] font-bold text-slate-400">
                             <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> Completed</span>
@@ -377,17 +405,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         </div>
                     </div>
 
-                    <!-- Scrollable wrapper resolving the coordinate alignment drift -->
                     <div class="overflow-x-auto w-full">
                         <div class="relative py-16 px-6 min-w-[650px] min-h-[170px]">
-                            <!-- Underlay Track Line -->
                             <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1.5 bg-gradient-to-r from-[#FDB813] via-slate-200 to-slate-100 rounded-full"></div>
-                            
-                            <!-- Dynamic Node Track -->
                             <div id="horizontalSummaryTrack" class="absolute inset-x-6 top-0 bottom-0">
-                                <!-- Nodes are injected here dynamically -->
-                                
-                                <!-- Dynamic "Today" Indicator Line -->
                                 <div id="horizontalTodayLine" class="absolute top-8 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none hidden transition-all duration-350">
                                     <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1E252D] text-[#FDB813] text-[10px] font-black tracking-widest uppercase px-3.5 py-1.5 rounded-full shadow-lg whitespace-nowrap flex items-center gap-1.5 border border-[#FDB813]/20">
                                         <span class="h-1.5 w-1.5 rounded-full bg-[#FDB813] animate-pulse"></span>
@@ -399,47 +420,40 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     </div>
                 </div>
 
-                <!-- Vertical Infographic Timeline Card -->
                 <div class="bg-white p-6 md:p-10 rounded-3xl border border-slate-200/80 shadow-sm space-y-6">
                     <div class="flex justify-between items-center pb-6 border-b border-slate-100 flex-wrap gap-4">
                         <div>
                             <h2 class="text-xl font-bold text-[#1E252D] tracking-tight">Timeline Milestone Map</h2>
                             <p class="text-sm text-slate-500">Vertically stacked stages ordered chronologically.</p>
                         </div>
-                        
-                        <!-- Add Custom Milestone Button -->
                         <button id="addMilestoneBtn" onclick="openMilestoneModal()" class="hidden bg-[#FDB813] hover:bg-[#E09F00] text-[#1E252D] text-xs md:text-sm font-black py-2.5 px-5 rounded-xl shadow-md transition-all">
                             + Add Milestone
                         </button>
                     </div>
 
                     <div class="relative py-4">
-                        <!-- Vertical Line Track -->
                         <div class="absolute left-6 top-6 bottom-6 w-0.5 bg-slate-200/80"></div>
-                        
-                        <!-- Milestone Cards Container -->
-                        <div class="space-y-4" id="timelineContainer">
-                            <!-- Cards are dynamically rendered and injected here -->
-                        </div>
+                        <div class="space-y-4" id="timelineContainer"></div>
                     </div>
                 </div>
-
             </div>
         </div>
 
         <!-- ROI TAB CONTENT WRAPPER -->
         <div id="roiContentWrapper" class="hidden space-y-8 font-montserrat">
-            <div class="flex flex-col lg:flex-row justify-between items-center bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm gap-8">
-                <div class="flex flex-col items-center lg:items-start">
-                    <p class="text-slate-900 text-lg font-black uppercase tracking-tight text-center lg:text-left max-w-sm leading-tight">
+            
+            <!-- MAIN ROI HEADER BOX -->
+            <div class="flex flex-col sm:flex-row justify-between items-center bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm gap-6">
+                <div class="flex flex-col items-center sm:items-start space-y-1">
+                    <p class="text-slate-900 text-base md:text-lg font-black uppercase tracking-tight text-center sm:text-left leading-tight">
                         Texada’s Equipment Rental Management Software - ROI Calculator
                     </p>
-                    <p class="text-slate-500 text-xs mt-1 text-center lg:text-left">Quantify your annual operational savings and productivity gains instantly.</p>
+                    <p class="text-slate-500 text-xs text-center sm:text-left">Quantify your annual operational savings and productivity gains instantly.</p>
                 </div>
                 
-                <div class="text-center lg:text-right bg-slate-50 p-6 rounded-2xl w-full lg:w-auto border border-slate-200/60 shadow-inner">
-                    <p class="text-[#E09F00] text-[11px] font-black uppercase tracking-[0.2em] mb-1">Total Projected Annual Value</p>
-                    <div id="roi-total-val" class="text-4xl md:text-5xl font-black tracking-tighter text-slate-900 leading-none count-up">$0</div>
+                <div class="text-center sm:text-right bg-slate-50 p-5 rounded-2xl w-full sm:w-auto border border-slate-200/60 shadow-inner shrink-0">
+                    <p class="text-[#E09F00] text-[10px] font-black uppercase tracking-[0.2em] mb-0.5">Total Projected Annual Value</p>
+                    <div id="roi-total-val" class="text-3xl md:text-4xl font-black tracking-tighter text-slate-900 leading-none count-up">$0</div>
                 </div>
             </div>
 
@@ -449,12 +463,16 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 <!-- Left Input Panel Controls -->
                 <div class="lg:col-span-5 flex flex-col gap-6">
                     <div class="bg-white border border-slate-250/80 rounded-2xl p-6 md:p-8 shadow-sm">
-                        <div class="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
-                            <h3 class="text-slate-900 text-[12px] font-black uppercase tracking-widest">Fleet Discovery</h3>
+                        <div class="flex justify-between items-center mb-5 border-b border-slate-200 pb-4">
+                            <div>
+                                <h3 class="text-slate-900 text-[12px] font-black uppercase tracking-widest">Fleet Discovery</h3>
+                                <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Define operational parameters & target goals</p>
+                            </div>
                             <button id="reset-btn" type="button" class="text-[10px] font-bold text-slate-400 hover:text-yellow-600 uppercase tracking-tight transition-colors px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-md hover:border-yellow-300 shadow-sm">Clear Form</button>
                         </div>
                         
                         <div class="space-y-6">
+
                             <div class="pb-4 border-b border-slate-200 space-y-4">
                                 <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Financial Baseline</h4>
                                 <div class="space-y-3">
@@ -463,7 +481,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                             <label for="oec" class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight block">Total Fleet OEC ($)</label>
                                             <div class="field-tooltip-wrapper">
                                                 <svg class="w-3 h-3 text-slate-400 cursor-help" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                                                <div class="field-tooltip">Original Equipment Cost: The total purchase price of all active assets in your rental fleet.</div>
+                                                <div class="field-tooltip">Original Equipment Cost: Total purchase price of active assets in rental fleet.</div>
                                             </div>
                                         </div>
                                         <input type="text" id="oec" placeholder="Enter Amount" class="input-box shadow-sm border-slate-300 !text-left px-4 currency-input">
@@ -473,7 +491,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                             <label for="annual-rev" class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight block">Annual Rental Revenue ($)</label>
                                             <div class="field-tooltip-wrapper">
                                                 <svg class="w-3 h-3 text-slate-400 cursor-help" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                                                <div class="field-tooltip">Total gross revenue generated specifically from equipment rentals over the last 12 months.</div>
+                                                <div class="field-tooltip">Gross revenue generated specifically from equipment rentals.</div>
                                             </div>
                                         </div>
                                         <input type="text" id="annual-rev" placeholder="Enter Amount" class="input-box shadow-sm border-slate-300 !text-left px-4 currency-input">
@@ -483,7 +501,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                             <label for="m-spend" class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight block">Annual Maintenance Spend ($)</label>
                                             <div class="field-tooltip-wrapper">
                                                 <svg class="w-3 h-3 text-slate-400 cursor-help" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
-                                                <div class="field-tooltip">Total annual cost for parts and labor to maintain the fleet. Auto-calculates to 5% of OEC by default.</div>
+                                                <div class="field-tooltip">Annual parts and labor cost. Defaults to 5% of OEC.</div>
                                             </div>
                                         </div>
                                         <input type="text" id="m-spend" placeholder="Auto-calculates 5% of OEC" class="input-box shadow-sm border-slate-300 !text-left px-4 currency-input">
@@ -508,36 +526,26 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                             <div class="pt-4 border-t border-slate-200 space-y-4">
                                 <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Damage and Fuel Recovery</h4>
                                 <div class="space-y-3">
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Fuel Recovery</p>
-                                    </div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Fuel Recovery</p>
                                     <div class="grid grid-cols-3 gap-4 items-center">
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Fuel Expense</span>
-                                        </div>
+                                        <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Fuel Expense</span>
                                         <div class="col-span-2">
                                             <input type="text" id="fuel-expense" placeholder="Annual Expense" class="input-box shadow-sm border-slate-300 !text-left px-4 currency-input">
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-3 gap-4">
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight leading-tight self-center">% Recovered</span>
-                                        </div>
+                                        <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight self-center">% Recovered</span>
                                         <input type="number" id="fuel-percent-curr" placeholder="Current %" class="input-box shadow-sm h-10 text-xs">
                                         <div class="flex flex-col items-center">
-                                            <input type="number" id="fuel-percent-gain" value="15" placeholder="Gain %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
-                                            <span class="text-[9px] font-bold text-slate-755 uppercase tracking-tighter mt-1">% Gain</span>
+                                            <input type="number" id="fuel-percent-gain" value="20" placeholder="Gain %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
+                                            <span class="text-[9px] font-bold text-slate-700 uppercase tracking-tighter mt-1">% Gain</span>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="space-y-3 pt-3 border-t border-slate-100">
-                                    <div class="flex justify-between items-center">
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Damage Recovery</p>
-                                    </div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Damage Recovery</p>
                                     <div class="grid grid-cols-3 gap-4 items-center">
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Monthly Returns</span>
-                                        </div>
+                                        <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Monthly Returns</span>
                                         <div class="col-span-2">
                                             <input type="number" id="returns-month" placeholder="Count" class="input-box shadow-sm border-slate-300 !text-left px-4">
                                         </div>
@@ -550,21 +558,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                 <div class="space-y-3">
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Accounting & Billing</p>
                                     <div class="grid grid-cols-3 gap-4 items-center">
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Staff Count</span>
-                                        </div>
+                                        <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Staff Count</span>
                                         <div class="col-span-2">
                                             <input type="number" id="staff-acc-count" placeholder="Count" class="input-box shadow-sm border-slate-300 !text-left px-4">
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-3 gap-4">
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight leading-tight self-center">Hrs / Wk</span>
-                                        </div>
+                                        <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight self-center">Hrs / Wk</span>
                                         <input type="number" id="staff-acc-hours-curr" placeholder="Hrs" class="input-box shadow-sm h-10 text-xs">
                                         <div class="flex flex-col items-center">
                                             <input type="number" id="staff-acc-efficiency" value="50" placeholder="Gain %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
-                                            <span class="text-[9px] font-bold text-slate-755 uppercase tracking-tighter mt-1">% Gain</span>
+                                            <span class="text-[9px] font-bold text-slate-700 uppercase tracking-tighter mt-1">% Gain</span>
                                         </div>
                                     </div>
                                 </div>
@@ -572,27 +576,21 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                 <div class="space-y-3 pt-4 border-t border-slate-100">
                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Shop Productivity</p>
                                     <div class="grid grid-cols-3 gap-4 items-center">
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Tech Count</span>
-                                        </div>
+                                        <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Tech Count</span>
                                         <div class="col-span-2">
                                             <input type="number" id="staff-serv-count" placeholder="Count" class="input-box shadow-sm border-slate-300 !text-left px-4">
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-3 gap-4">
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight leading-tight self-center">Billing Rate</span>
-                                        </div>
+                                        <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight self-center">Billing Rate</span>
                                         <input type="number" id="staff-serv-bill-rate" placeholder="Rate" class="input-box shadow-sm h-10 text-xs">
                                         <div class="flex flex-col items-center">
                                             <input type="number" id="staff-serv-daily-reclaim" value="30" placeholder="Min" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 h-10 text-xs">
-                                            <span class="text-[8px] font-bold text-slate-755 uppercase tracking-tighter mt-1">Min/Day</span>
+                                            <span class="text-[8px] font-bold text-slate-700 uppercase tracking-tighter mt-1">Min/Day</span>
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-3 gap-4 items-center">
-                                        <div class="flex items-center gap-1">
-                                            <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Recovery %</span>
-                                        </div>
+                                        <span class="text-[11px] font-extrabold text-slate-700 uppercase tracking-tight">Recovery %</span>
                                         <div class="col-span-2">
                                             <input type="number" id="staff-serv-recovery" value="75" placeholder="Recovery %" class="input-box shadow-sm border-yellow-250 bg-yellow-50/30 px-4">
                                         </div>
@@ -606,7 +604,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 <!-- Right Column Output Metrics & Tooltips -->
                 <div class="lg:col-span-7 flex flex-col gap-4">
                     
-                    <!-- Tooltip 1: DRIVERS OF REVENUE GROWTH (Matches image_00dbe8.png) -->
+                    <!-- Tooltip 1: DRIVERS OF REVENUE GROWTH -->
                     <div class="result-item group">
                         <div class="tooltip">
                             <h5 class="text-[#FDB813] text-xs font-black uppercase tracking-widest mb-3 border-b border-slate-800 pb-2">DRIVERS OF REVENUE GROWTH</h5>
@@ -637,7 +635,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         <div id="roi-res-dollar" class="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">$0</div>
                     </div>
 
-                    <!-- Tooltip 2: STOPPED LEAKAGE & DAMAGE RECOVERY (Matches image_00dc45.png) -->
+                    <!-- Tooltip 2: STOPPED LEAKAGE & DAMAGE RECOVERY -->
                     <div class="result-item group">
                         <div class="tooltip">
                             <h5 class="text-[#FDB813] text-xs font-black uppercase tracking-widest mb-3 border-b border-slate-800 pb-2">STOPPED LEAKAGE & DAMAGE RECOVERY</h5>
@@ -648,7 +646,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                 </li>
                                 <li class="flex items-start gap-2 border-b border-slate-800/50 pb-2.5">
                                     <span class="inline-block w-1.5 h-1.5 bg-[#FDB813] rounded-sm mt-1.5 shrink-0"></span>
-                                    <span><strong class="text-white font-bold">Fuel Reclaim:</strong> Typical Texada customers see a 15% lift in fuel billing accuracy through automated meter logging.</span>
+                                    <span><strong class="text-white font-bold">Fuel Reclaim:</strong> Typical Texada customers see a 20% lift in fuel billing accuracy through automated meter logging.</span>
                                 </li>
                                 <li class="flex items-start gap-2">
                                     <span class="inline-block w-1.5 h-1.5 bg-[#FDB813] rounded-sm mt-1.5 shrink-0"></span>
@@ -668,7 +666,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         <div id="roi-res-recovery" class="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter">$0</div>
                     </div>
 
-                    <!-- Tooltip 3: ELIMINATING THE "MANUAL ENTRY TAX" (Matches image_00dc24.png) -->
+                    <!-- Tooltip 3: ELIMINATING THE "MANUAL ENTRY TAX" -->
                     <div class="result-item group">
                         <div class="tooltip">
                             <h5 class="text-[#FDB813] text-xs font-black uppercase tracking-widest mb-3 border-b border-slate-800 pb-2">ELIMINATING THE "MANUAL ENTRY TAX"</h5>
@@ -679,11 +677,11 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                 </li>
                                 <li class="flex items-start gap-2 border-b border-slate-800/50 pb-2.5">
                                     <span class="inline-block w-1.5 h-1.5 bg-[#FDB813] rounded-sm mt-1.5 shrink-0"></span>
-                                    <span><strong class="text-white font-bold">Automated Reconciliation:</strong> Digital documents and signatures are stored centrally, removing hours spent "chasing paper".</span>
+                                    <span><strong class="text-white font-bold">Automated Reconciliation:</strong> Digital documents and signatures are stored centrally, removing paper chasing.</span>
                                 </li>
                                 <li class="flex items-start gap-2">
                                     <span class="inline-block w-1.5 h-1.5 bg-[#FDB813] rounded-sm mt-1.5 shrink-0"></span>
-                                    <span><strong class="text-white font-bold">Exception Management:</strong> System validation allows staff to focus only on discrepant invoices, speeding up billing.</span>
+                                    <span><strong class="text-white font-bold">Exception Management:</strong> System validation allows staff to focus only on discrepant invoices.</span>
                                 </li>
                             </ul>
                         </div>
@@ -702,22 +700,22 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         </div>
                     </div>
 
-                    <!-- Tooltip 4: MAXIMIZING BILLABLE WRENCH TIME (Matches image_00dc65.png) -->
+                    <!-- Tooltip 4: MAXIMIZING BILLABLE WRENCH TIME -->
                     <div class="result-item group">
                         <div class="tooltip">
                             <h5 class="text-[#FDB813] text-xs font-black uppercase tracking-widest mb-3 border-b border-slate-800 pb-2">MAXIMIZING BILLABLE WRENCH TIME</h5>
                             <ul class="text-[11px] text-slate-300 space-y-3 list-none">
                                 <li class="flex items-start gap-2 border-b border-slate-800/50 pb-2.5">
                                     <span class="inline-block w-1.5 h-1.5 bg-[#FDB813] rounded-sm mt-1.5 shrink-0"></span>
-                                    <span><strong class="text-white font-bold">Mobile Work Orders:</strong> Techs update logs, photos, and request parts via mobile devices directly from the asset.</span>
+                                    <span><strong class="text-white font-bold">Mobile Work Orders:</strong> Techs update logs, photos, and request parts via mobile devices directly from asset.</span>
                                 </li>
                                 <li class="flex items-start gap-2 border-b border-slate-800/50 pb-2.5">
                                     <span class="inline-block w-1.5 h-1.5 bg-[#FDB813] rounded-sm mt-1.5 shrink-0"></span>
-                                    <span><strong class="text-white font-bold">Real-Time Parts Linkage:</strong> Mechanics can see parts availability instantly, preventing jobs starting that cannot be finished.</span>
+                                    <span><strong class="text-white font-bold">Real-Time Parts Linkage:</strong> Mechanics see parts availability instantly, preventing unfinished job stalls.</span>
                                 </li>
                                 <li class="flex items-start gap-2">
                                     <span class="inline-block w-1.5 h-1.5 bg-[#FDB813] rounded-sm mt-1.5 shrink-0"></span>
-                                    <span><strong class="text-white font-bold">Rapid Inspections:</strong> Standardized digital checklists put equipment back in the "Ready-to-Rent" pool 15-20% faster.</span>
+                                    <span><strong class="text-white font-bold">Rapid Inspections:</strong> Digital checklists put equipment back in "Ready-to-Rent" pool 15-20% faster.</span>
                                 </li>
                             </ul>
                         </div>
@@ -736,30 +734,41 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         </div>
                     </div>
 
-                    <!-- Texada Standards Sidebar Panel (Re-aligned to sit under results in the right column - image_00dca5.png) -->
-                    <div class="bg-[#1E252D] text-white p-6 rounded-2xl border border-[#FDB813]/20 shadow-md space-y-4 animate-fade-in mt-2">
-                        <h4 class="text-xs font-black uppercase tracking-widest text-[#FDB813]">Texada Standards</h4>
-                        <div class="grid grid-cols-2 gap-4">
+                    <!-- Dynamic Texada Standards Panel with Integrated Preset Switcher -->
+                    <div id="texadaStandardsCard" class="bg-[#1E252D] text-white p-6 rounded-2xl border border-[#FDB813]/20 shadow-md space-y-4 animate-fade-in mt-2">
+                        <div class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-3 gap-2">
+                            <div>
+                                <h4 class="text-xs font-black uppercase tracking-widest text-[#FDB813]">Texada Standards</h4>
+                                <p class="text-[9px] text-slate-400 font-semibold">Operational target benchmarks</p>
+                            </div>
+                            <!-- Integrated Interactive Preset Switcher -->
+                            <div class="inline-flex bg-slate-900 p-1 rounded-lg border border-slate-700/80 gap-1">
+                                <button id="btnScenarioConservative" onclick="applyRoiScenario('conservative')" class="scenario-btn-dark inactive">Conservative</button>
+                                <button id="btnScenarioTarget" onclick="applyRoiScenario('target')" class="scenario-btn-dark active">Target</button>
+                                <button id="btnScenarioAggressive" onclick="applyRoiScenario('aggressive')" class="scenario-btn-dark inactive">Aggressive</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 pt-1">
                             <div class="space-y-0.5">
                                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Dollar Ute</span>
-                                <span class="text-lg font-black text-[#FDB813] tracking-tight">+5% Pts</span>
+                                <span id="std-dollar-ute" class="text-lg font-black text-[#FDB813] tracking-tight">+7.5% Pts</span>
                             </div>
                             <div class="space-y-0.5">
                                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Billing Efficiency</span>
-                                <span class="text-lg font-black text-[#FDB813] tracking-tight">50% Gain</span>
+                                <span id="std-billing-eff" class="text-lg font-black text-[#FDB813] tracking-tight">50% Gain</span>
                             </div>
                             <div class="space-y-0.5">
                                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Tech Productivity</span>
-                                <span class="text-lg font-black text-[#FDB813] tracking-tight">30m / Day</span>
+                                <span id="std-tech-prod" class="text-lg font-black text-[#FDB813] tracking-tight">30m / Day</span>
                             </div>
                             <div class="space-y-0.5">
                                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Fuel Recovery</span>
-                                <span class="text-lg font-black text-[#FDB813] tracking-tight">15% Gain</span>
+                                <span id="std-fuel-rec" class="text-lg font-black text-[#FDB813] tracking-tight">20% Gain</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Complete Workflow Management Info Card (Re-aligned to sit under results in the right column - image_00dca5.png) -->
+                    <!-- Complete Workflow Management Info Card -->
                     <div class="bg-white border-2 border-dashed border-slate-200 p-6 rounded-2xl shadow-sm space-y-2 animate-fade-in">
                         <h4 class="text-xs font-black text-slate-900 uppercase tracking-wider">Complete Workflow Management</h4>
                         <p class="text-[11px] text-slate-500 leading-relaxed font-medium">
@@ -767,7 +776,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         </p>
                     </div>
 
-                    <!-- Built for Heavy Equipment Rental Card (Re-aligned to sit under results in the right column - image_00dca5.png) -->
+                    <!-- Built for Heavy Equipment Rental Card -->
                     <div class="bg-[#1E252D] text-white p-6 rounded-2xl border border-[#FDB813]/20 shadow-md space-y-4 animate-fade-in">
                         <h4 class="text-xs font-black uppercase tracking-wider text-slate-200">Built for Heavy Equipment Rental</h4>
                         <div class="grid grid-cols-2 gap-4">
@@ -821,6 +830,10 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     <input type="text" id="modalOwner" placeholder="e.g., Acme Lead" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#FDB813]">
                 </div>
                 <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Attachment / SOW Link (URL)</label>
+                    <input type="url" id="modalAttachment" placeholder="e.g., https://link-to-spec-or-sow.pdf" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#FDB813]">
+                </div>
+                <div>
                     <label class="block text-xs font-bold text-slate-500 uppercase mb-1.5">Initial Status</label>
                     <select id="modalStatus" class="w-full bg-white border border-slate-300 text-[#1E252D] rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#FDB813]">
                         <option value="Pending">Pending</option>
@@ -843,16 +856,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
         <span class="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-350 ease-in-out whitespace-nowrap">Texada Admin Mode</span>
     </button>
 
-    <!-- Database and Application Scripts -->
     <script>
-        const SUPABASE_URL = "https://lufzkqlpmyzhaovldxjx.supabase.co"; 
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx1ZnprcWxwbXl6aGFvdmxkeGp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyMTg0NDIsImV4cCI6MjA5OTc5NDQ0Mn0.isbnVteRQrd6CHEJrWoCDYncQT8jYQgo8-UvLf7hdls";     
-        const CURRENT_DATE_STR = new Date().toISOString().split('T')[0]; // Dynamic current date timestamp
-        
-        let supabaseInstance = null;
-        let currentProspectId = "";
-        let isMaintManual = false; 
-        
         function getSupabaseClient() {
             if (supabaseInstance) return supabaseInstance;
             if (typeof supabase !== 'undefined' && SUPABASE_URL.indexOf("your-project-id") === -1) {
@@ -888,44 +892,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             return date.toLocaleDateString('en-US', options);
         }
 
-        function updateDiscoveryDate(val) {
-            if (!val) return;
-            state.discoveryDate = val;
-            saveState();
-            renderTimeline();
-            showToast("Discovery date updated.", "success");
-        }
-
-        function updateGoLiveDate(val) {
-            if (!val) return;
-            state.goLiveDate = val;
-            saveState();
-            renderTimeline();
-            showToast("Target launch date recalculated.", "success");
-        }
-
-        let state = {
-            prospectName: "",
-            goLiveDate: "", 
-            discoveryDate: "", 
-            customMilestones: [],
-            anchorOverrides: {}, 
-            anchorStatuses: {
-                'anchor-discovery': 'Completed',
-                'anchor-signature': 'Pending',
-                'anchor-kickoff': 'Pending',
-                'anchor-golive': 'Pending'
-            },
-            isAdmin: false,
-            activeTab: 'timeline',
-            roi: {
-                oec: "", annualRev: "", mSpend: "", dollarTarget: "", fuelExpense: "",
-                fuelPercentCurr: "", fuelPercentGain: "15", returnsMonth: "", staffAccCount: "",
-                staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
-                staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
-            }
-        };
-
         function ensureStateSafety() {
             if (!state.anchorOverrides) state.anchorOverrides = {};
             if (!state.anchorStatuses) {
@@ -941,7 +907,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             if (!state.roi) {
                 state.roi = {
                     oec: "", annualRev: "", mSpend: "", dollarTarget: "", fuelExpense: "",
-                    fuelPercentCurr: "", fuelPercentGain: "15", returnsMonth: "", staffAccCount: "",
+                    fuelPercentCurr: "", fuelPercentGain: "20", returnsMonth: "", staffAccCount: "",
                     staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
                     staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
                 };
@@ -974,41 +940,195 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             }, 4000);
         }
 
-        function slugify(text) {
-            return text.toString().toLowerCase().trim()
-                .replace(/\s+/g, '-')           
-                .replace(/[^\w\-]+/g, '')       
-                .replace(/\-\-+/g, '-');        
+        function handleDbSearch(query) {
+            clearTimeout(searchDebounceTimer);
+            const container = document.getElementById('dbSearchResults');
+            const launchBtn = document.getElementById('launchProspectBtn');
+            selectedProspectFromSearch = null;
+            if (launchBtn) {
+                launchBtn.disabled = true;
+                launchBtn.className = "w-full bg-slate-300 text-slate-500 cursor-not-allowed font-black py-3 px-6 rounded-xl text-sm transition-all shadow-sm";
+            }
+
+            if (!container) return;
+
+            if (!query || query.trim().length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-400 text-center font-medium">Type above to query Supabase cloud database...</p>';
+                return;
+            }
+
+            container.innerHTML = '<p class="text-xs text-amber-600 text-center font-medium animate-pulse">Querying database...</p>';
+
+            searchDebounceTimer = setTimeout(async () => {
+                const client = getSupabaseClient();
+                if (!client) {
+                    container.innerHTML = '<p class="text-xs text-rose-500 text-center font-bold">Database connection unavailable.</p>';
+                    return;
+                }
+
+                try {
+                    const cleanQuery = query.trim();
+                    const { data, error } = await client
+                        .from('evaluations')
+                        .select('id, prospect_name, discovery_date, go_live_date, updated_at')
+                        .or(`prospect_name.ilike.%${cleanQuery}%,id.ilike.%${cleanQuery}%`)
+                        .order('updated_at', { ascending: false })
+                        .limit(100);
+
+                    if (error) throw error;
+
+                    if (!data || data.length === 0) {
+                        container.innerHTML = `<p class="text-xs text-slate-500 text-center font-medium">No database records found matching "<strong>${cleanQuery}</strong>".</p>`;
+                        return;
+                    }
+
+                    container.innerHTML = '';
+                    data.forEach(item => {
+                        const title = item.prospect_name || item.id;
+                        const dateStr = item.updated_at ? new Date(item.updated_at).toLocaleDateString() : 'N/A';
+                        
+                        const card = document.createElement('div');
+                        card.className = "p-2.5 border border-slate-200 rounded-lg bg-slate-50 hover:bg-amber-50/60 hover:border-amber-300 cursor-pointer transition-all flex justify-between items-center";
+                        card.onclick = () => selectProspectItem(card, item);
+                        card.ondblclick = () => { selectProspectItem(card, item); launchSelectedProspect(); };
+                        
+                        card.innerHTML = `
+                            <div>
+                                <span class="text-xs font-bold text-slate-800 block">${title}</span>
+                                <span class="text-[10px] text-slate-400 font-semibold">Updated: ${dateStr}</span>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+
+                } catch (err) {
+                    console.error("Database search error:", err);
+                    container.innerHTML = `<p class="text-xs text-rose-600 text-center font-bold p-2">Supabase query blocked.<br><span class="text-[10px] text-slate-500 font-normal">Check if RLS is disabled on the evaluations table.</span></p>`;
+                }
+            }, 300);
         }
 
-        function createNewProspect() {
-            state.prospectName = "";
-            state.goLiveDate = "";
-            state.discoveryDate = "";
-            state.customMilestones = [];
-            state.anchorOverrides = {};
-            currentProspectId = "";
+        function selectProspectItem(element, item) {
+            document.querySelectorAll('#dbSearchResults > div').forEach(el => {
+                el.classList.remove('border-amber-500', 'bg-amber-100/70');
+                el.classList.add('bg-slate-50', 'border-slate-200');
+            });
+            element.classList.remove('bg-slate-50', 'border-slate-200');
+            element.classList.add('border-amber-500', 'bg-amber-100/70');
             
-            try {
-                const cleanUrl = window.location.origin + window.location.pathname + '?admin=true';
-                window.history.pushState({ path: cleanUrl }, '', cleanUrl);
-            } catch (e) {
-                console.warn("Iframe blocked window.history navigation.", e);
+            selectedProspectFromSearch = item;
+            const launchBtn = document.getElementById('launchProspectBtn');
+            if (launchBtn) {
+                launchBtn.disabled = false;
+                launchBtn.className = "w-full bg-[#1E252D] hover:bg-slate-800 text-[#FDB813] font-black py-3 px-6 rounded-xl text-sm transition-all shadow-md cursor-pointer";
             }
-            
-            const emptyState = document.getElementById('emptyStatePanel');
-            const workspace = document.getElementById('timelineWorkspace');
-            const headerPickers = document.getElementById('headerDatePickers');
-            
-            emptyState.classList.remove('hidden');
-            workspace.classList.add('hidden');
-            headerPickers.classList.add('hidden');
+        }
 
-            document.getElementById('initCompanyNameInput').value = "";
-            document.getElementById('initDiscoveryInput').value = "";
-            document.getElementById('initGoLiveInput').value = "";
+        function launchSelectedProspect() {
+            if (!selectedProspectFromSearch) return;
+            currentProspectId = selectedProspectFromSearch.id;
+            const adminToggle = document.getElementById('existingProspectAdminToggle');
+            const isAdmin = adminToggle ? adminToggle.checked : true;
+            state.isAdmin = isAdmin;
+
+            try {
+                let url = window.location.origin + window.location.pathname + '?prospect=' + currentProspectId;
+                if (isAdmin) url += '&admin=true';
+                window.history.pushState({ path: url }, '', url);
+            } catch (e) {
+                console.warn("Iframe history push blocked.", e);
+            }
+
+            toggleAdmin(isAdmin);
+            loadState();
+            showToast(`Opened "${selectedProspectFromSearch.prospect_name || selectedProspectFromSearch.id}"!`, "success");
+        }
+
+        function exportPDF() {
+            const element = state.activeTab === 'timeline' ? document.getElementById('timelineWorkspace') : document.getElementById('roiContentWrapper');
+            if (!element) return;
+            const filename = `Texada_${state.prospectName || 'Evaluation'}_${state.activeTab.toUpperCase()}_Plan.pdf`;
+            const opt = {
+                margin:       [0.3, 0.3, 0.3, 0.3],
+                filename:     filename,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            showToast("Generating PDF report...", "info");
+            html2pdf().set(opt).from(element).save().then(() => {
+                showToast("PDF Download Complete!", "success");
+            });
+        }
+
+        function applyRoiScenario(type) {
+            activeScenario = type;
             
-            showToast("Portal reset! Ready to design a new roadmap.", "info");
+            const btnCons = document.getElementById('btnScenarioConservative');
+            const btnTarg = document.getElementById('btnScenarioTarget');
+            const btnAggr = document.getElementById('btnScenarioAggressive');
+            
+            if (btnCons && btnTarg && btnAggr) {
+                btnCons.className = type === 'conservative' ? 'scenario-btn-dark active' : 'scenario-btn-dark inactive';
+                btnTarg.className = type === 'target' ? 'scenario-btn-dark active' : 'scenario-btn-dark inactive';
+                btnAggr.className = type === 'aggressive' ? 'scenario-btn-dark active' : 'scenario-btn-dark inactive';
+            }
+
+            const currentUte = parseFloat(document.getElementById('dollar-curr')?.value || 0);
+
+            // Exact agreed scenario defaults:
+            // Dollar Ute: 5.0, 7.5, 10.0
+            // Billing: 25, 50, 75
+            // Tech: 20, 30, 40
+            // Fuel: 10, 20, 30
+            let uteLift = 7.5;
+            let fuelGain = 20;
+            let billingGain = 50;
+            let techReclaim = 30;
+
+            if (type === 'conservative') {
+                uteLift = 5.0;
+                fuelGain = 10;
+                billingGain = 25;
+                techReclaim = 20;
+            } else if (type === 'target') {
+                uteLift = 7.5;
+                fuelGain = 20;
+                billingGain = 50;
+                techReclaim = 30;
+            } else if (type === 'aggressive') {
+                uteLift = 10.0;
+                fuelGain = 30;
+                billingGain = 75;
+                techReclaim = 40;
+            }
+
+            const targetInput = document.getElementById('dollar-target');
+            if (targetInput) targetInput.value = (currentUte > 0 ? currentUte + uteLift : 50 + uteLift).toFixed(2);
+            
+            const fuelInput = document.getElementById('fuel-percent-gain');
+            if (fuelInput) fuelInput.value = fuelGain.toString();
+            
+            const staffAccInput = document.getElementById('staff-acc-efficiency');
+            if (staffAccInput) staffAccInput.value = billingGain.toString();
+            
+            const techReclaimInput = document.getElementById('staff-serv-daily-reclaim');
+            if (techReclaimInput) techReclaimInput.value = techReclaim.toString();
+
+            // Dynamic Texada Standards card update
+            const stdUte = document.getElementById('std-dollar-ute');
+            const stdBill = document.getElementById('std-billing-eff');
+            const stdTech = document.getElementById('std-tech-prod');
+            const stdFuel = document.getElementById('std-fuel-rec');
+
+            if (stdUte) stdUte.innerText = `+${uteLift}% Pts`;
+            if (stdBill) stdBill.innerText = `${billingGain}% Gain`;
+            if (stdTech) stdTech.innerText = `${techReclaim}m / Day`;
+            if (stdFuel) stdFuel.innerText = `${fuelGain}% Gain`;
+
+            calculateROI();
+            saveState();
+            showToast(`Applied ${type.toUpperCase()} ROI Target Preset!`, "info");
         }
 
         function switchGatewayTab(tab) {
@@ -1016,6 +1136,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             const tabExistingBtn = document.getElementById('gatewayTabExistingBtn');
             const newContent = document.getElementById('gatewayTabNewContent');
             const existingContent = document.getElementById('gatewayTabExistingContent');
+
+            if (!tabNewBtn || !tabExistingBtn || !newContent || !existingContent) return;
 
             if (tab === 'new') {
                 tabNewBtn.className = "py-3.5 px-4 border-r border-slate-200 bg-white text-[#1E252D] focus:outline-none uppercase tracking-wider font-extrabold";
@@ -1027,77 +1149,39 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 tabNewBtn.className = "py-3.5 px-4 hover:bg-slate-50 hover:text-slate-700 transition-all focus:outline-none uppercase tracking-wider font-extrabold";
                 existingContent.classList.remove('hidden');
                 newContent.classList.add('hidden');
-                loadExistingDirectory();
             }
         }
 
-        async function loadExistingDirectory() {
-            const dropdown = document.getElementById('existingProspectDropdown');
-            if (!dropdown) return;
-
-            const client = getSupabaseClient();
-            if (!client) {
-                dropdown.innerHTML = '<option value="">-- DB Offline (Sandbox Mode active) --</option>';
-                return;
-            }
-
-            try {
-                const { data, error } = await client
-                    .from('evaluations')
-                    .select('id, prospect_name, updated_at')
-                    .order('updated_at', { ascending: false });
-
-                if (error) throw error;
-
-                dropdown.innerHTML = '';
-                if (!data || data.length === 0) {
-                    dropdown.innerHTML = '<option value="">No Active Prospects in DB</option>';
-                    return;
-                }
-
-                data.forEach(p => {
-                    const dateObj = new Date(p.updated_at);
-                    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                    dropdown.innerHTML += `<option value="${p.id}">${p.prospect_name || p.id} (Updated: ${formattedDate})</option>`;
-                });
-
-            } catch (err) {
-                console.error("Failed to load prospect database query:", err);
-                dropdown.innerHTML = '<option value="">Error pulling database list</option>';
-            }
-        }
-
-        function launchExistingProspect() {
-            const id = document.getElementById('existingProspectDropdown').value;
-            const isAdmin = document.getElementById('existingProspectAdminToggle').checked;
+        function createNewProspect() {
+            state.prospectName = "";
+            state.goLiveDate = "";
+            state.discoveryDate = "";
+            state.customMilestones = [];
+            state.anchorOverrides = {};
+            currentProspectId = "";
             
-            if (!id) {
-                showToast("Please select a prospect to launch.", "error");
-                return;
-            }
+            const emptyState = document.getElementById('emptyStatePanel');
+            const workspace = document.getElementById('timelineWorkspace');
+            const headerPickers = document.getElementById('headerDatePickers');
+            
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (workspace) workspace.classList.add('hidden');
+            if (headerPickers) headerPickers.classList.add('hidden');
 
-            currentProspectId = id;
-            state.isAdmin = isAdmin;
+            const nameInput = document.getElementById('initCompanyNameInput');
+            const discInput = document.getElementById('initDiscoveryInput');
+            const liveInput = document.getElementById('initGoLiveInput');
 
-            try {
-                let url = window.location.origin + window.location.pathname + '?prospect=' + id;
-                if (isAdmin) url += '&admin=true';
-                window.history.pushState({ path: url }, '', url);
-            } catch (e) {
-                console.warn("Iframe blocked window.history navigation.", e);
-            }
-
-            toggleAdmin(isAdmin);
-            loadState();
-            showToast("Workspace opened successfully!", "success");
+            if (nameInput) nameInput.value = "";
+            if (discInput) discInput.value = "";
+            if (liveInput) liveInput.value = "";
+            
+            showToast("Portal reset! Ready to design a new roadmap.", "info");
         }
 
         function saveState() {
             const client = getSupabaseClient();
-            if (!client || !currentProspectId) {
-                localStorage.setItem('dsr_timeline_blueprint_v3', JSON.stringify(state));
-                return;
-            }
+            if (!client || !currentProspectId) return;
 
             client
                 .from('evaluations')
@@ -1113,42 +1197,19 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     updated_at: new Date().toISOString()
                 })
                 .then(({ error }) => {
-                    if (error) {
-                        console.error("Database upsert failed:", error);
-                    }
+                    if (error) console.error("Database upsert failed:", error);
                 });
         }
 
         function loadState(callback) {
             const urlParams = new URLSearchParams(window.location.search);
-            
-            if (!currentProspectId) {
-                currentProspectId = urlParams.get('prospect');
-            }
-            
-            if (urlParams.get('admin') === 'true' || state.isAdmin) {
-                state.isAdmin = true;
-            }
+            if (!currentProspectId) currentProspectId = urlParams.get('prospect');
+            if (urlParams.get('admin') === 'true' || state.isAdmin) state.isAdmin = true;
 
             const client = getSupabaseClient();
-
             if (!client || !currentProspectId) {
-                if (!currentProspectId) {
-                    state.prospectName = "";
-                    state.discoveryDate = "";
-                    state.goLiveDate = "";
-                    state.customMilestones = [];
-                    state.anchorOverrides = {};
-                } else {
-                    const savedState = localStorage.getItem('dsr_timeline_blueprint_v3');
-                    if (savedState) {
-                        state = JSON.parse(savedState);
-                    }
-                }
                 ensureStateSafety();
-                switchTab(state.activeTab || 'timeline');
                 renderTimeline();
-                fillROIInputsFromState();
                 if (callback) callback();
                 return;
             }
@@ -1167,12 +1228,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                         state.anchorOverrides = data.anchor_overrides || {};
                         state.anchorStatuses = data.anchor_statuses || {};
                         state.roi = data.roi || {};
-                    } else if (error) {
-                        console.warn("Supabase fetch failed. Sandbox Fallback.", error);
-                        const savedState = localStorage.getItem('dsr_timeline_blueprint_v3');
-                        if (savedState) {
-                            state = JSON.parse(savedState);
-                        }
                     }
                     ensureStateSafety();
                     switchTab(state.activeTab || 'timeline');
@@ -1190,6 +1245,8 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             const roiWrapper = document.getElementById('roiContentWrapper');
             const headerPickers = document.getElementById('headerDatePickers');
 
+            if (!timelineBtn || !roiBtn || !timelineWrapper || !roiWrapper) return;
+
             if (tab === 'roi') {
                 timelineBtn.classList.remove('border-[#FDB813]', 'text-[#1E252D]');
                 timelineBtn.classList.add('border-transparent', 'text-slate-400');
@@ -1197,7 +1254,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 roiBtn.classList.add('border-[#FDB813]', 'text-[#1E252D]');
                 timelineWrapper.classList.add('hidden');
                 roiWrapper.classList.remove('hidden');
-                headerPickers.classList.add('hidden');
+                if (headerPickers) headerPickers.classList.add('hidden');
                 calculateROI();
             } else {
                 roiBtn.classList.remove('border-[#FDB813]', 'text-[#1E252D]');
@@ -1206,7 +1263,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 timelineBtn.classList.add('border-[#FDB813]', 'text-[#1E252D]');
                 roiWrapper.classList.add('hidden');
                 timelineWrapper.classList.remove('hidden');
-                if (state.goLiveDate && state.discoveryDate) {
+                if (state.goLiveDate && state.discoveryDate && headerPickers) {
                     headerPickers.classList.remove('hidden');
                 }
             }
@@ -1219,7 +1276,6 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 style: 'currency', currency: 'USD', maximumFractionDigits: 0 
             }).format(num);
         };
-        const formatCurrency = formatROIVal; 
 
         const getRawValue = (id) => {
             const el = document.getElementById(id);
@@ -1230,17 +1286,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             const oec = getRawValue('oec');
             const rev = getRawValue('annual-rev');
             const maint = getRawValue('m-spend');
-            const targetUte = parseFloat(document.getElementById('dollar-target').value) || 0;
+            const targetUte = parseFloat(document.getElementById('dollar-target')?.value || 0);
             const fuelExp = getRawValue('fuel-expense');
-            const fuelGainPercent = parseFloat(document.getElementById('fuel-percent-gain').value) || 0;
-            const monthlyReturns = parseFloat(document.getElementById('returns-month').value) || 0;
-            const accCount = parseFloat(document.getElementById('staff-acc-count').value) || 0;
-            const accHrs = parseFloat(document.getElementById('staff-acc-hours-curr').value) || 0;
-            const accGain = parseFloat(document.getElementById('staff-acc-efficiency').value) || 0;
-            const techCount = parseFloat(document.getElementById('staff-serv-count').value) || 0;
-            const techRate = parseFloat(document.getElementById('staff-serv-bill-rate').value) || 0;
-            const techReclaim = parseFloat(document.getElementById('staff-serv-daily-reclaim').value) || 0;
-            const techRecovery = parseFloat(document.getElementById('staff-serv-recovery').value) || 0;
+            const fuelGainPercent = parseFloat(document.getElementById('fuel-percent-gain')?.value || 0);
+            const monthlyReturns = parseFloat(document.getElementById('returns-month')?.value || 0);
+            const accCount = parseFloat(document.getElementById('staff-acc-count')?.value || 0);
+            const accHrs = parseFloat(document.getElementById('staff-acc-hours-curr')?.value || 0);
+            const accGain = parseFloat(document.getElementById('staff-acc-efficiency')?.value || 0);
+            const techCount = parseFloat(document.getElementById('staff-serv-count')?.value || 0);
+            const techRate = parseFloat(document.getElementById('staff-serv-bill-rate')?.value || 0);
+            const techReclaim = parseFloat(document.getElementById('staff-serv-daily-reclaim')?.value || 0);
+            const techRecovery = parseFloat(document.getElementById('staff-serv-recovery')?.value || 0);
 
             const actualNet = Math.max(0, rev - maint);
             const targetPotential = (targetUte / 100) * oec;
@@ -1254,30 +1310,41 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             const shopVal = shopHrsReclaimed * techRate * (techRecovery / 100);
             const total = revGain + totalRecovery + adminVal + shopVal;
 
-            document.getElementById('roi-total-val').innerText = formatROIVal(total) || '$0';
-            document.getElementById('roi-res-dollar').innerText = formatROIVal(revGain) || '$0';
-            document.getElementById('roi-res-recovery').innerText = formatROIVal(totalRecovery) || '$0';
-            document.getElementById('roi-res-admin-val').innerText = formatROIVal(adminVal) || '$0';
-            document.getElementById('roi-res-admin-hrs').innerText = Math.round(adminHrsReclaimed).toLocaleString() + " Hrs Reclaimed";
-            document.getElementById('roi-res-shop-val').innerText = formatROIVal(shopVal) || '$0';
-            document.getElementById('roi-res-shop-hrs').innerText = Math.round(shopHrsReclaimed).toLocaleString() + " Hrs Reclaimed";
+            const elTotal = document.getElementById('roi-total-val');
+            const elRev = document.getElementById('roi-res-dollar');
+            const elRec = document.getElementById('roi-res-recovery');
+            const elAdminVal = document.getElementById('roi-res-admin-val');
+            const elAdminHrs = document.getElementById('roi-res-admin-hrs');
+            const elShopVal = document.getElementById('roi-res-shop-val');
+            const elShopHrs = document.getElementById('roi-res-shop-hrs');
+
+            if (elTotal) elTotal.innerText = formatROIVal(total) || '$0';
+            if (elRev) elRev.innerText = formatROIVal(revGain) || '$0';
+            if (elRec) elRec.innerText = formatROIVal(totalRecovery) || '$0';
+            if (elAdminVal) elAdminVal.innerText = formatROIVal(adminVal) || '$0';
+            if (elAdminHrs) elAdminHrs.innerText = Math.round(adminHrsReclaimed).toLocaleString() + " Hrs Reclaimed";
+            if (elShopVal) elShopVal.innerText = formatROIVal(shopVal) || '$0';
+            if (elShopHrs) elShopHrs.innerText = Math.round(shopHrsReclaimed).toLocaleString() + " Hrs Reclaimed";
         };
 
         const updateUte = () => {
             const oec = getRawValue('oec');
             const rev = getRawValue('annual-rev');
             const maint = getRawValue('m-spend');
+            const dollarCurrEl = document.getElementById('dollar-curr');
+            if (!dollarCurrEl) return;
+
             if (oec === 0 || rev === 0) {
-                document.getElementById('dollar-curr').value = "";
+                dollarCurrEl.value = "";
                 return;
             }
             const base = ((rev - maint) / oec) * 100;
             const curr = base + 2.18;
-            document.getElementById('dollar-curr').value = curr.toFixed(2);
+            dollarCurrEl.value = curr.toFixed(2);
             const targetEl = document.getElementById('dollar-target');
-            if (targetEl.dataset.isManual !== "true") {
-                targetEl.value = (curr + 5).toFixed(2);
-                state.roi.dollarTarget = (curr + 5).toFixed(2);
+            if (targetEl && targetEl.dataset.isManual !== "true") {
+                targetEl.value = (curr + 7.5).toFixed(2);
+                state.roi.dollarTarget = (curr + 7.5).toFixed(2);
             }
         };
 
@@ -1296,9 +1363,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 const el = document.getElementById(id);
                 if (el) {
                     el.value = map[id] || "";
-                    if (el.classList.contains('currency-input') && map[id]) {
-                        el.value = formatROIVal(map[id]);
-                    }
+                    if (el.classList.contains('currency-input') && map[id]) el.value = formatROIVal(map[id]);
                 }
             });
         }
@@ -1306,17 +1371,17 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
         function setupROIEventListeners() {
             const maintInput = document.getElementById('m-spend');
             const targetInput = document.getElementById('dollar-target');
-            maintInput.addEventListener('focus', () => { isMaintManual = true; });
-            targetInput.addEventListener('input', () => { targetInput.dataset.isManual = "true"; });
+            if (maintInput) maintInput.addEventListener('focus', () => { isMaintManual = true; });
+            if (targetInput) targetInput.addEventListener('input', () => { targetInput.dataset.isManual = "true"; });
 
             document.querySelectorAll('#roiContentWrapper input').forEach(input => {
                 input.addEventListener('input', (e) => {
                     const id = e.target.id;
                     const val = e.target.value.replace(/[^0-9.]/g, '');
-                    if (id === 'oec' && !isMaintManual) {
+                    if (id === 'oec' && !isMaintManual && maintInput) {
                         const oecVal = getRawValue('oec');
                         const computedMaint = Math.round(oecVal * 0.05);
-                        maintInput.value = formatCurrency(computedMaint); 
+                        maintInput.value = formatROIVal(computedMaint); 
                         state.roi.mSpend = computedMaint.toString();
                     }
                     const keyMap = {
@@ -1332,14 +1397,9 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                     calculateROI();
                 });
 
-                // Auto-select text on focus & double-click without losing cursor highlight
                 input.addEventListener('focus', (e) => {
-                    if (e.target.classList.contains('currency-input')) {
-                        e.target.value = e.target.value.replace(/[^0-9.]/g, '');
-                    }
-                    setTimeout(() => {
-                        e.target.select();
-                    }, 20);
+                    if (e.target.classList.contains('currency-input')) e.target.value = e.target.value.replace(/[^0-9.]/g, '');
+                    setTimeout(() => e.target.select(), 20);
                 });
 
                 if (input.classList.contains('currency-input')) {
@@ -1353,25 +1413,28 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 }
             });
 
-            document.getElementById('reset-btn').onclick = () => {
-                isMaintManual = false;
-                targetInput.dataset.isManual = "false";
-                document.querySelectorAll('#roiContentWrapper input').forEach(i => {
-                    if (i.id === 'staff-acc-efficiency') i.value = "50";
-                    else if (i.id === 'staff-serv-daily-reclaim') i.value = "30";
-                    else if (i.id === 'staff-serv-recovery') i.value = "75";
-                    else if (i.id === 'fuel-percent-gain') i.value = "15";
-                    else i.value = "";
-                });
-                state.roi = {
-                    oec: "", annualRev: "", mSpend: "", dollarTarget: "", fuelExpense: "",
-                    fuelPercentCurr: "", fuelPercentGain: "15", returnsMonth: "", staffAccCount: "",
-                    staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
-                    staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
+            const resetBtn = document.getElementById('reset-btn');
+            if (resetBtn) {
+                resetBtn.onclick = () => {
+                    isMaintManual = false;
+                    if (targetInput) targetInput.dataset.isManual = "false";
+                    document.querySelectorAll('#roiContentWrapper input').forEach(i => {
+                        if (i.id === 'staff-acc-efficiency') i.value = "50";
+                        else if (i.id === 'staff-serv-daily-reclaim') i.value = "30";
+                        else if (i.id === 'staff-serv-recovery') i.value = "75";
+                        else if (i.id === 'fuel-percent-gain') i.value = "20";
+                        else i.value = "";
+                    });
+                    state.roi = {
+                        oec: "", annualRev: "", mSpend: "", dollarTarget: "", fuelExpense: "",
+                        fuelPercentCurr: "", fuelPercentGain: "20", returnsMonth: "", staffAccCount: "",
+                        staffAccHoursCurr: "", staffAccEfficiency: "50", staffServCount: "",
+                        staffServBillRate: "", staffServDailyReclaim: "30", staffServRecovery: "75"
+                    };
+                    saveState();
+                    calculateROI();
                 };
-                saveState();
-                calculateROI();
-            };
+            }
         }
 
         function renderTimeline() {
@@ -1380,20 +1443,23 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             const headerPickers = document.getElementById('headerDatePickers');
 
             if (!state.goLiveDate || !state.discoveryDate) {
-                emptyState.classList.remove('hidden');
-                workspace.classList.add('hidden');
-                headerPickers.classList.add('hidden');
+                if (emptyState) emptyState.classList.remove('hidden');
+                if (workspace) workspace.classList.add('hidden');
+                if (headerPickers) headerPickers.classList.add('hidden');
                 return;
             }
 
-            emptyState.classList.add('hidden');
-            workspace.classList.remove('hidden');
-            if (state.activeTab === 'timeline') headerPickers.classList.remove('hidden');
+            if (emptyState) emptyState.classList.add('hidden');
+            if (workspace) workspace.classList.remove('hidden');
+            if (state.activeTab === 'timeline' && headerPickers) headerPickers.classList.remove('hidden');
 
-            document.getElementById('headerDiscoveryInput').value = state.discoveryDate;
-            document.getElementById('headerGoLiveInput').value = state.goLiveDate;
+            const hDiscovery = document.getElementById('headerDiscoveryInput');
+            const hGoLive = document.getElementById('headerGoLiveInput');
+            const hSubtitle = document.getElementById('headerSubtitle');
 
-            document.getElementById('headerSubtitle').innerHTML = state.prospectName ? `Co-developed timeline mapping for <strong>${state.prospectName}</strong>` : "Co-developed timeline mapping for Acme Corp & Partners";
+            if (hDiscovery) hDiscovery.value = state.discoveryDate;
+            if (hGoLive) hGoLive.value = state.goLiveDate;
+            if (hSubtitle) hSubtitle.innerHTML = state.prospectName ? `Co-developed timeline mapping for <strong>${state.prospectName}</strong>` : "Co-developed timeline mapping for Texada Prospect";
 
             const goLive = state.goLiveDate;
             const kickOff = getOffsetMonths(goLive, -4); 
@@ -1403,42 +1469,24 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             const goLiveDateObj = new Date(goLive + "T00:00:00");
             const today = new Date(CURRENT_DATE_STR + "T00:00:00");
             const diffToGoLive = Math.ceil((goLiveDateObj - today) / (1000 * 60 * 60 * 24));
-            document.getElementById('metricCountdown').innerText = diffToGoLive > 0 ? diffToGoLive : "0";
+            
+            const countdownEl = document.getElementById('metricCountdown');
+            if (countdownEl) countdownEl.innerText = diffToGoLive > 0 ? diffToGoLive : "0";
 
-            const signatureDateObj = new Date(signature + "T00:00:00");
-            const alertContainer = document.getElementById('realityCheckAlert');
-            const alertMsg = document.getElementById('realityCheckMessage');
-
-            let riskRating = "SAFE";
-            if (signatureDateObj < today) {
-                riskRating = "CRITICAL";
-                const diffTime = Math.abs(today - signatureDateObj);
-                const diffWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
-                alertMsg.innerHTML = `To achieve your requested Launch Target on <strong>${formatReadableDate(goLive)}</strong>, contract finalization needed to occur <strong>${diffWeeks} week${diffWeeks > 1 ? 's' : ''} ago</strong> (${formatReadableDate(signature)}).`;
-                alertContainer.classList.remove('hidden');
-            } else {
-                alertContainer.classList.add('hidden');
-                if (Math.ceil((signatureDateObj - new Date(discovery + "T00:00:00")) / (1000 * 60 * 60 * 24)) < 30) riskRating = "COMPRESSED";
-            }
-
-            const riskPill = document.getElementById('metricRisk');
-            riskPill.innerText = riskRating;
-            riskPill.className = `inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-100 text-slate-700 uppercase tracking-wide ${riskRating === 'CRITICAL' ? 'bg-rose-100 text-rose-800' : riskRating === 'COMPRESSED' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`;
-
-            const companyName = state.prospectName || 'Prospect Company';
+            const companyName = state.prospectName || 'Texada Prospect';
 
             const anchors = [
-                { id: 'anchor-discovery', title: state.anchorOverrides['anchor-discovery']?.title || 'Strategic Discovery Call', date: discovery, owner: state.anchorOverrides['anchor-discovery']?.owner || `Texada & ${companyName}`, isAnchor: true, type: 'discovery', status: state.anchorStatuses['anchor-discovery'] || 'Completed', icon: `<svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-400', indicatorColor: 'bg-slate-400 ring-slate-100', shortName: 'Discovery' },
-                { id: 'anchor-signature', title: state.anchorOverrides['anchor-signature']?.title || 'Contract Finalization & Signed', date: signature, owner: state.anchorOverrides['anchor-signature']?.owner || companyName, isAnchor: true, type: 'contract', status: state.anchorStatuses['anchor-signature'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#FDB813]', indicatorColor: 'bg-[#FDB813] ring-yellow-100', shortName: 'Contract' },
-                { id: 'anchor-kickoff', title: state.anchorOverrides['anchor-kickoff']?.title || 'Strategic Onboarding Kick-off', date: kickOff, owner: state.anchorOverrides['anchor-kickoff']?.owner || `Texada Implementation Team & ${companyName}`, isAnchor: true, type: 'kickoff', status: state.anchorStatuses['anchor-kickoff'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#1E252D]', indicatorColor: 'bg-[#1E252D] ring-slate-200', shortName: 'Kick-off' },
-                { id: 'anchor-golive', title: state.anchorOverrides['anchor-golive']?.title || 'Platform Production Go-Live 🎉', date: goLive, owner: state.anchorOverrides['anchor-golive']?.owner || `Texada & ${companyName}`, isAnchor: true, type: 'golive', status: state.anchorStatuses['anchor-golive'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`, colorTheme: 'from-white to-white border-[#FDB813] border-l-4 border-l-[#FDB813] font-bold', indicatorColor: 'bg-[#FDB813] ring-yellow-200', shortName: 'Launch' }
+                { id: 'anchor-discovery', title: state.anchorOverrides['anchor-discovery']?.title || 'Strategic Discovery Call', date: discovery, owner: state.anchorOverrides['anchor-discovery']?.owner || `Texada & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-discovery'] || 'Completed', icon: `<svg class="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-400', shortName: 'Discovery' },
+                { id: 'anchor-signature', title: state.anchorOverrides['anchor-signature']?.title || 'Contract Finalization & Signed', date: signature, owner: state.anchorOverrides['anchor-signature']?.owner || companyName, isAnchor: true, status: state.anchorStatuses['anchor-signature'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#FDB813]', shortName: 'Contract' },
+                { id: 'anchor-kickoff', title: state.anchorOverrides['anchor-kickoff']?.title || 'Strategic Onboarding Kick-off', date: kickOff, owner: state.anchorOverrides['anchor-kickoff']?.owner || `Texada Implementation Team & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-kickoff'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`, colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-[#1E252D]', shortName: 'Kick-off' },
+                { id: 'anchor-golive', title: state.anchorOverrides['anchor-golive']?.title || 'Platform Production Go-Live 🎉', date: goLive, owner: state.anchorOverrides['anchor-golive']?.owner || `Texada & ${companyName}`, isAnchor: true, status: state.anchorStatuses['anchor-golive'] || 'Pending', icon: `<svg class="w-4 h-4 text-[#1E252D]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>`, colorTheme: 'from-white to-white border-[#FDB813] border-l-4 border-l-[#FDB813] font-bold', shortName: 'Launch' }
             ];
 
             let allMilestones = [...anchors];
             state.customMilestones.forEach(m => {
                 allMilestones.push({
-                    id: m.id, title: m.title, date: m.date, owner: m.owner, isAnchor: false, status: m.status || 'Pending',
-                    colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-300', indicatorColor: 'bg-slate-400 ring-slate-100',
+                    id: m.id, title: m.title, date: m.date, owner: m.owner, attachment: m.attachment, isAnchor: false, status: m.status || 'Pending',
+                    colorTheme: 'from-white to-white border-slate-200 border-l-4 border-l-slate-300',
                     icon: `<svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>`,
                     shortName: m.title.substring(0, 15) + (m.title.length > 15 ? '...' : '')
                 });
@@ -1447,98 +1495,134 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             allMilestones.sort((a, b) => new Date(a.date + "T00:00:00") - new Date(b.date + "T00:00:00"));
 
             const completedCount = allMilestones.filter(m => m.status === 'Completed').length;
-            document.getElementById('metricProgress').innerText = `${Math.round((completedCount / allMilestones.length) * 100)}%`;
-            document.getElementById('metricTaskCount').innerText = `(${completedCount}/${allMilestones.length} done)`;
-
-            const milestoneTimes = allMilestones.map(m => new Date(m.date + "T00:00:00").getTime());
-            const todayTime = new Date(CURRENT_DATE_STR + "T00:00:00").getTime();
-            
-            // Include todayTime in overall bounds so Today indicator bar always stays on the timeline track
-            const allTimes = [...milestoneTimes, todayTime];
-            const minTime = Math.min(...allTimes);
-            const maxTime = Math.max(...allTimes);
-            const totalDuration = maxTime - minTime;
+            const progressEl = document.getElementById('metricProgress');
+            const taskCountEl = document.getElementById('metricTaskCount');
+            if (progressEl) progressEl.innerText = `${Math.round((completedCount / allMilestones.length) * 100)}%`;
+            if (taskCountEl) taskCountEl.innerText = `(${completedCount}/${allMilestones.length} done)`;
 
             const horizontalTrack = document.getElementById('horizontalSummaryTrack');
-            let existingTodayLine = document.getElementById('horizontalTodayLine');
-            if (!existingTodayLine) {
-                existingTodayLine = document.createElement('div');
-                existingTodayLine.id = 'horizontalTodayLine';
-                existingTodayLine.className = "absolute top-8 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none transition-all duration-350";
-                existingTodayLine.innerHTML = `
+            if (horizontalTrack) {
+                horizontalTrack.innerHTML = '';
+                
+                const milestoneTimes = allMilestones.map(m => new Date(m.date + "T00:00:00").getTime());
+                const todayTime = new Date(CURRENT_DATE_STR + "T00:00:00").getTime();
+                const minTime = Math.min(...milestoneTimes);
+                const maxTime = Math.max(...milestoneTimes);
+                const totalDuration = maxTime - minTime;
+                const nMilestones = allMilestones.length;
+
+                // Hybrid Rank + Date Ratio spacing algorithm for clean visual balance across the track
+                let positions = allMilestones.map((m, idx) => {
+                    const mTime = new Date(m.date + "T00:00:00").getTime();
+                    const linearPct = totalDuration > 0 ? ((mTime - minTime) / totalDuration) * 80 + 10 : 50;
+                    const rankPct = nMilestones > 1 ? (idx / (nMilestones - 1)) * 80 + 10 : 50;
+                    // Blend 75% rank distribution with 25% date ratio to balance spacing and eliminate disproportionate gaps
+                    const blendedPct = rankPct * 0.75 + linearPct * 0.25;
+                    return { milestone: m, time: mTime, pct: blendedPct };
+                });
+
+                // Collision buffer adjustment to prevent node overlap
+                let adjusted = true, iterations = 0;
+                while (adjusted && iterations < 15) {
+                    adjusted = false;
+                    for (let i = 0; i < positions.length - 1; i++) {
+                        if (positions[i+1].pct - positions[i].pct < 12) {
+                            positions[i+1].pct = positions[i].pct + 12;
+                            adjusted = true;
+                        }
+                    }
+                    if (positions.length > 0 && positions[positions.length - 1].pct > 92) {
+                        positions[positions.length - 1].pct = 92;
+                        for (let i = positions.length - 1; i > 0; i--) {
+                            if (positions[i].pct - positions[i-1].pct < 12) {
+                                positions[i-1].pct = positions[i].pct - 12;
+                                adjusted = true;
+                            }
+                        }
+                    }
+                    iterations++;
+                }
+
+                // Interpolate Today line placement smoothly along the balanced milestone track
+                let todayPct = 50;
+                if (nMilestones > 0) {
+                    if (todayTime <= positions[0].time) {
+                        todayPct = Math.max(4, positions[0].pct - 6);
+                    } else if (todayTime >= positions[nMilestones - 1].time) {
+                        todayPct = Math.min(96, positions[nMilestones - 1].pct + 6);
+                    } else {
+                        for (let i = 0; i < nMilestones - 1; i++) {
+                            if (todayTime >= positions[i].time && todayTime <= positions[i + 1].time) {
+                                const span = positions[i + 1].time - positions[i].time;
+                                const ratio = span > 0 ? (todayTime - positions[i].time) / span : 0;
+                                todayPct = positions[i].pct + ratio * (positions[i + 1].pct - positions[i].pct);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Render Today Line
+                const todayLine = document.createElement('div');
+                todayLine.id = 'horizontalTodayLine';
+                todayLine.className = "absolute top-8 bottom-0 w-0.5 border-l-2 border-dashed border-[#1E252D] z-30 pointer-events-none transition-all duration-350";
+                todayLine.style.left = `${todayPct}%`;
+                todayLine.innerHTML = `
                     <div class="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1E252D] text-[#FDB813] text-[10px] font-black tracking-widest uppercase px-3.5 py-1.5 rounded-full shadow-lg whitespace-nowrap flex items-center gap-1.5 border border-[#FDB813]/20">
                         <span class="h-1.5 w-1.5 rounded-full bg-[#FDB813] animate-pulse"></span>
                         Today
                     </div>
                 `;
-            }
-            horizontalTrack.innerHTML = '';
-            horizontalTrack.appendChild(existingTodayLine);
+                horizontalTrack.appendChild(todayLine);
 
-            const todayPct = totalDuration > 0 ? ((todayTime - minTime) / totalDuration) * 88 + 6 : 50;
-            existingTodayLine.style.left = `${todayPct}%`;
-            existingTodayLine.classList.remove('hidden');
-
-            let positions = allMilestones.map(m => {
-                return { milestone: m, pct: totalDuration > 0 ? ((new Date(m.date + "T00:00:00").getTime() - minTime) / totalDuration) * 88 + 6 : 50 };
-            });
-
-            let adjusted = true, iterations = 0;
-            while (adjusted && iterations < 15) {
-                adjusted = false;
-                for (let i = 0; i < positions.length - 1; i++) {
-                    if (positions[i+1].pct - positions[i].pct < 15) {
-                        positions[i+1].pct = positions[i].pct + 15;
-                        adjusted = true;
+                positions.forEach((pos, idx) => {
+                    const m = pos.milestone;
+                    let statusBorderColor = "border-slate-300 bg-white", statusBadgeDot = "★";
+                    if (m.status === 'Completed') { 
+                        statusBorderColor = "border-emerald-500 bg-emerald-50 text-emerald-600 font-extrabold ring-4 ring-emerald-100"; 
+                        statusBadgeDot = "✓"; 
+                    } else if (m.status === 'In Progress') { 
+                        statusBorderColor = "border-amber-500 bg-amber-50 text-amber-700 animate-pulse ring-4 ring-amber-100"; 
+                        statusBadgeDot = "●"; 
+                    } else if (m.status === 'Blocked') { 
+                        statusBorderColor = "border-rose-500 bg-rose-50 text-rose-700 font-extrabold"; 
+                        statusBadgeDot = "!"; 
                     }
-                }
-                if (positions[positions.length - 1].pct > 94) {
-                    positions[positions.length - 1].pct = 94;
-                    for (let i = positions.length - 1; i > 0; i--) {
-                        if (positions[i].pct - positions[i-1].pct < 15) {
-                            positions[i-1].pct = positions[i].pct - 15;
-                            adjusted = true;
-                        }
-                    }
-                }
-                iterations++;
+
+                    const isEven = idx % 2 === 0;
+                    const summaryNode = document.createElement('div');
+                    summaryNode.className = "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group cursor-pointer transition-transform hover:scale-110 z-20";
+                    summaryNode.style.left = `${pos.pct}%`;
+                    summaryNode.onclick = () => {
+                        const targetCard = document.getElementById(`detailed-${m.id}`);
+                        if (targetCard) targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    };
+                    
+                    summaryNode.innerHTML = isEven ? `
+                        <div class="absolute bottom-6 flex flex-col items-center text-center whitespace-nowrap z-30">
+                            <span class="text-[10px] font-bold text-slate-800 truncate max-w-[100px] block">${m.shortName}</span>
+                            <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
+                            <div class="w-px h-1.5 bg-slate-400 mt-1"></div>
+                        </div>
+                        <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20">${statusBadgeDot}</div>
+                    ` : `
+                        <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20">${statusBadgeDot}</div>
+                        <div class="absolute top-6 flex flex-col items-center text-center whitespace-nowrap z-30">
+                            <div class="w-px h-1.5 bg-slate-400 mb-1"></div>
+                            <span class="text-[10px] font-bold text-slate-800 truncate max-w-[100px] block">${m.shortName}</span>
+                            <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
+                        </div>
+                    `;
+                    horizontalTrack.appendChild(summaryNode);
+                });
             }
-
-            positions.forEach((pos, idx) => {
-                const m = pos.milestone;
-                let statusBorderColor = "border-slate-350 bg-white", statusBadgeDot = "★";
-                if (m.status === 'Completed') { statusBorderColor = "border-emerald-500 bg-emerald-50 text-emerald-600 font-extrabold ring-4 ring-emerald-100"; statusBadgeDot = "✓"; }
-                else if (m.status === 'In Progress') { statusBorderColor = "border-amber-500 bg-amber-50 text-amber-700 animate-pulse ring-4 ring-amber-100"; statusBadgeDot = "●"; }
-                else if (m.status === 'Blocked') { statusBorderColor = "border-rose-500 bg-rose-50 text-rose-700 font-extrabold"; statusBadgeDot = "!"; }
-
-                const isEven = idx % 2 === 0;
-                const summaryNode = document.createElement('div');
-                summaryNode.className = "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center group cursor-pointer transition-transform hover:scale-110 z-20";
-                summaryNode.style.left = `${pos.pct}%`;
-                
-                summaryNode.innerHTML = isEven ? `
-                    <div class="absolute bottom-6 flex flex-col items-center text-center whitespace-nowrap z-30">
-                        <span class="text-[10px] font-bold text-slate-800 truncate max-w-[100px] block">${m.shortName}</span>
-                        <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
-                        <div class="w-px h-1.5 bg-slate-450 mt-1"></div>
-                    </div>
-                    <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20">${statusBadgeDot}</div>
-                ` : `
-                    <div class="w-7 h-7 rounded-full border-2 ${statusBorderColor} flex items-center justify-center text-[10px] shadow-sm relative z-20">${statusBadgeDot}</div>
-                    <div class="absolute top-6 flex flex-col items-center text-center whitespace-nowrap z-30">
-                        <div class="w-px h-1.5 bg-slate-450 mb-1"></div>
-                        <span class="text-[10px] font-bold text-slate-800 truncate max-w-[100px] block">${m.shortName}</span>
-                        <span class="text-[9px] text-[#E09F00] font-extrabold mt-0.5">${formatReadableDateShort(m.date)}</span>
-                    </div>
-                `;
-                horizontalTrack.appendChild(summaryNode);
-            });
 
             const container = document.getElementById('timelineContainer');
+            if (!container) return;
             container.innerHTML = '';
             let todayBannerInserted = false;
 
-            allMilestones.forEach((m, idx) => {
+            allMilestones.forEach((m) => {
                 if (!todayBannerInserted && today <= new Date(m.date + "T00:00:00")) {
                     insertVerticalTodayBanner(container);
                     todayBannerInserted = true;
@@ -1551,7 +1635,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 else if (m.status === 'In Progress') bStyle = "from-amber-50/70 to-white border-amber-300 border-l-4 border-l-amber-500 shadow-md ring-1 ring-amber-100";
                 else if (m.status === 'Blocked') bStyle = "from-rose-50/70 to-white border-rose-300 border-l-4 border-l-rose-500 shadow-sm";
 
-                card.className = "ml-12 relative flex flex-col md:flex-row md:justify-between md:items-center bg-gradient-to-r " + bStyle + " border p-5 rounded-2xl gap-4 hover:border-slate-350 shadow-sm";
+                card.className = "ml-12 relative flex flex-col md:flex-row md:justify-between md:items-center bg-gradient-to-r " + bStyle + " border p-5 rounded-2xl gap-4 shadow-sm";
                 card.innerHTML = `
                     <span class="absolute -left-[32px] md:-left-[36px] top-1/2 transform -translate-y-1/2 flex h-6 w-6 rounded-full bg-slate-400 ring-4 ring-[#F8FAFC] items-center justify-center z-10 text-[10px] text-white">
                         ${m.status === 'Completed' ? '✓' : ''}
@@ -1564,6 +1648,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                                 <span class="text-[9px] uppercase font-extrabold px-2 py-0.5 rounded-md border">${m.status}</span>
                             </div>
                             <p class="text-xs text-slate-500">Responsible: <span class="font-semibold text-slate-700">${m.owner}</span></p>
+                            ${m.attachment ? `<a href="${m.attachment}" target="_blank" class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 hover:text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-md mt-1">📎 View Attachment</a>` : ''}
                         </div>
                     </div>
                     <div class="flex items-center gap-3 justify-between md:justify-end border-t md:border-t-0 border-slate-200 pt-3 md:pt-0">
@@ -1584,76 +1669,73 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             if (!todayBannerInserted) insertVerticalTodayBanner(container);
         }
 
+        function insertVerticalTodayBanner(container) {
+            if (!container) return;
+            const separator = document.createElement('div');
+            separator.className = "ml-12 relative flex items-center justify-between bg-[#1E252D] text-white p-3.5 rounded-xl border-l-4 border-[#FDB813] shadow-md";
+            separator.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-black uppercase tracking-widest text-[#FDB813]">YOU ARE HERE</span>
+                </div>
+                <span class="text-xs font-extrabold px-2.5 py-0.5 bg-slate-800 rounded-md text-[#FDB813] border border-slate-700">
+                    ${formatReadableDate(CURRENT_DATE_STR)}
+                </span>
+            `;
+            container.appendChild(separator);
+        }
+
+        function openMilestoneModal() { const m = document.getElementById('milestoneModal'); if (m) m.classList.remove('hidden'); }
+        function closeMilestoneModal() { const m = document.getElementById('milestoneModal'); if (m) m.classList.add('hidden'); }
+
         function editMilestone(id) {
             if (!state.isAdmin) return;
             const isAnchor = id.startsWith('anchor-');
             if (isAnchor) {
-                const goLive = state.goLiveDate;
-                const kickOff = getOffsetMonths(goLive, -4); 
-                const signature = getOffsetDate(kickOff, -35); 
-                const discovery = state.discoveryDate;
-
-                let dateVal = "";
-                let defaultTitle = "";
-                let defaultOwner = "";
-                const companyName = state.prospectName || 'Prospect Company';
-
-                if (id === 'anchor-discovery') {
-                    dateVal = discovery;
-                    defaultTitle = "Strategic Discovery Call";
-                    defaultOwner = `Texada & ${companyName}`;
-                } else if (id === 'anchor-signature') {
-                    dateVal = signature;
-                    defaultTitle = "Contract Finalization & Signed";
-                    defaultOwner = companyName;
-                } else if (id === 'anchor-kickoff') {
-                    dateVal = kickOff;
-                    defaultTitle = "Strategic Onboarding Kick-off";
-                    defaultOwner = `Texada Implementation Team & ${companyName}`;
-                } else if (id === 'anchor-golive') {
-                    dateVal = goLive;
-                    defaultTitle = "Platform Production Go-Live 🎉";
-                    defaultOwner = `Texada & ${companyName}`;
-                }
-
                 const currentOverride = state.anchorOverrides[id] || {};
-                
-                document.getElementById('modalTitle').innerText = "Edit Core Anchor Milestone";
-                document.getElementById('modalId').value = id;
-                document.getElementById('modalName').value = currentOverride.title || defaultTitle;
-                document.getElementById('modalDate').value = dateVal;
-                
-                if (id === 'anchor-golive' || id === 'anchor-discovery') {
-                    document.getElementById('modalDate').disabled = false;
-                    document.getElementById('dateLockBadge').classList.add('hidden');
-                } else {
-                    document.getElementById('modalDate').disabled = true; 
-                    document.getElementById('dateLockBadge').classList.remove('hidden');
-                }
+                const mTitle = document.getElementById('modalTitle');
+                const mId = document.getElementById('modalId');
+                const mName = document.getElementById('modalName');
+                const mDate = document.getElementById('modalDate');
+                const mOwner = document.getElementById('modalOwner');
+                const mAtt = document.getElementById('modalAttachment');
+                const mStat = document.getElementById('modalStatus');
 
-                document.getElementById('modalOwner').value = currentOverride.owner || defaultOwner;
-                document.getElementById('modalStatus').value = state.anchorStatuses[id] || 'Pending';
+                if (mTitle) mTitle.innerText = "Edit Core Anchor Milestone";
+                if (mId) mId.value = id;
+                if (mName) mName.value = currentOverride.title || id;
+                if (mDate) mDate.value = state.discoveryDate;
+                if (mOwner) mOwner.value = currentOverride.owner || "";
+                if (mAtt) mAtt.value = "";
+                if (mStat) mStat.value = state.anchorStatuses[id] || 'Pending';
             } else {
                 const m = state.customMilestones.find(milestone => milestone.id === id);
                 if (!m) return;
-                document.getElementById('modalTitle').innerText = "Edit Custom Milestone";
-                document.getElementById('modalId').value = m.id;
-                document.getElementById('modalName').value = m.title;
-                document.getElementById('modalDate').value = m.date;
-                document.getElementById('modalDate').disabled = false;
-                document.getElementById('dateLockBadge').classList.add('hidden');
-                document.getElementById('modalOwner').value = m.owner;
-                document.getElementById('modalStatus').value = m.status || 'Pending';
+                const mTitle = document.getElementById('modalTitle');
+                const mId = document.getElementById('modalId');
+                const mName = document.getElementById('modalName');
+                const mDate = document.getElementById('modalDate');
+                const mOwner = document.getElementById('modalOwner');
+                const mAtt = document.getElementById('modalAttachment');
+                const mStat = document.getElementById('modalStatus');
+
+                if (mTitle) mTitle.innerText = "Edit Custom Milestone";
+                if (mId) mId.value = m.id;
+                if (mName) mName.value = m.title;
+                if (mDate) mDate.value = m.date;
+                if (mOwner) mOwner.value = m.owner;
+                if (mAtt) mAtt.value = m.attachment || "";
+                if (mStat) mStat.value = m.status || 'Pending';
             }
-            document.getElementById('milestoneModal').classList.remove('hidden');
+            openMilestoneModal();
         }
 
         function saveCustomMilestone() {
-            const id = document.getElementById('modalId').value;
-            const title = document.getElementById('modalName').value;
-            const date = document.getElementById('modalDate').value;
-            const owner = document.getElementById('modalOwner').value || 'Unassigned';
-            const status = document.getElementById('modalStatus').value || 'Pending';
+            const id = document.getElementById('modalId')?.value;
+            const title = document.getElementById('modalName')?.value;
+            const date = document.getElementById('modalDate')?.value;
+            const owner = document.getElementById('modalOwner')?.value || 'Unassigned';
+            const attachment = document.getElementById('modalAttachment')?.value || '';
+            const status = document.getElementById('modalStatus')?.value || 'Pending';
 
             if (!title) return showToast("Milestone Title is required.", "error");
 
@@ -1661,18 +1743,13 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
                 if (id.startsWith('anchor-')) {
                     state.anchorOverrides[id] = { title, owner };
                     state.anchorStatuses[id] = status;
-                    if (id === 'anchor-golive' && date) {
-                        state.goLiveDate = date;
-                    } else if (id === 'anchor-discovery' && date) {
-                        state.discoveryDate = date;
-                    }
                 } else {
                     const idx = state.customMilestones.findIndex(m => m.id === id);
-                    if (idx !== -1) state.customMilestones[idx] = { id, title, date, owner, status };
+                    if (idx !== -1) state.customMilestones[idx] = { id, title, date, owner, attachment, status };
                 }
             } else {
                 if (!date) return showToast("Date is required.", "error");
-                state.customMilestones.push({ id: 'custom-' + Date.now().toString(), title, date, owner, status });
+                state.customMilestones.push({ id: 'custom-' + Date.now().toString(), title, date, owner, attachment, status });
             }
             saveState();
             renderTimeline();
@@ -1691,153 +1768,52 @@ ALTER PUBLICATION supabase_realtime ADD TABLE evaluations;</pre>
             showToast("Milestone status updated.", "success");
         }
 
-        async function submitBaselineDates() {
-            const companyName = document.getElementById('initCompanyNameInput').value.trim();
-            const discVal = document.getElementById('initDiscoveryInput').value;
-            const liveVal = document.getElementById('initGoLiveInput').value;
+        function submitBaselineDates() {
+            const companyName = document.getElementById('initCompanyNameInput')?.value.trim();
+            const discVal = document.getElementById('initDiscoveryInput')?.value;
+            const liveVal = document.getElementById('initGoLiveInput')?.value;
 
-            if (!companyName) {
-                showToast("Company Name is required to build a prospect portal.", "error");
-                return;
-            }
-            if (!discVal || !liveVal) {
-                showToast("Both Discovery Date and Target Go-Live Date are required.", "error");
+            if (!companyName || !discVal || !liveVal) {
+                showToast("All fields are required to build a prospect portal.", "error");
                 return;
             }
 
-            const slug = slugify(companyName) + '-' + Math.floor(1000 + Math.random() * 9000);
-
+            const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Math.floor(1000 + Math.random() * 9000);
+            currentProspectId = slug;
             state.discoveryDate = discVal;
             state.goLiveDate = liveVal;
             state.prospectName = companyName;
+            state.isAdmin = true;
 
-            const client = getSupabaseClient();
-
-            if (client) {
-                try {
-                    const { error } = await client
-                        .from('evaluations')
-                        .insert([
-                            {
-                                id: slug,
-                                prospect_name: companyName,
-                                discovery_date: discVal,
-                                go_live_date: liveVal,
-                                custom_milestones: state.customMilestones,
-                                anchor_overrides: state.anchorOverrides,
-                                anchor_statuses: state.anchorStatuses,
-                                roi: state.roi
-                            }
-                        ]);
-
-                    if (error) throw error;
-                    showToast("Prospect portal successfully created in Supabase!", "success");
-                    
-                    currentProspectId = slug;
-                    state.isAdmin = true;
-                    
-                    try {
-                        const newUrl = window.location.origin + window.location.pathname + '?prospect=' + slug + '&admin=true';
-                        window.history.pushState({ path: newUrl }, '', newUrl);
-                    } catch(e) {
-                        console.warn("Iframe blocked window.history navigation.", e);
-                    }
-
-                    toggleAdmin(true); 
-                    renderTimeline();
-                    fillROIInputsFromState();
-                    calculateROI();
-
-                } catch (err) {
-                    console.error("Supabase creation failed:", err);
-                    showToast("Database connection failed. Saving locally instead.", "error");
-                    
-                    currentProspectId = slug;
-                    state.isAdmin = true;
-                    saveState();
-                    
-                    toggleAdmin(true);
-                    renderTimeline();
-                    fillROIInputsFromState();
-                    calculateROI();
-                }
-            } else {
-                currentProspectId = slug;
-                state.isAdmin = true;
-                saveState();
-                
-                toggleAdmin(true);
-                renderTimeline();
-                fillROIInputsFromState();
-                calculateROI();
-            }
+            saveState();
+            toggleAdmin(true);
+            renderTimeline();
+            calculateROI();
+            showToast("Mutual Action Plan Created Successfully!", "success");
         }
-
-        function openMilestoneModal() { document.getElementById('milestoneModal').classList.remove('hidden'); }
-        function closeMilestoneModal() { document.getElementById('milestoneModal').classList.add('hidden'); }
-        function deleteMilestone(id) { state.customMilestones = state.customMilestones.filter(m => m.id !== id); saveState(); renderTimeline(); }
 
         function toggleAdmin(forceState = null) {
             state.isAdmin = forceState !== null ? forceState : !state.isAdmin;
-            
             const banner = document.getElementById('adminBanner');
             const badge = document.getElementById('adminBadge');
             const addBtn = document.getElementById('addMilestoneBtn');
             
             if (state.isAdmin) {
-                banner.classList.remove('hidden');
-                badge.classList.remove('hidden');
-                addBtn.classList.remove('hidden');
-                showToast("Admin Controls Unlocked", "info");
+                if (banner) banner.classList.remove('hidden');
+                if (badge) badge.classList.remove('hidden');
+                if (addBtn) addBtn.classList.remove('hidden');
             } else {
-                banner.classList.add('hidden');
-                badge.classList.add('hidden');
-                addBtn.classList.add('hidden');
-                showToast("Read-Only Client Mode Active", "success");
+                if (banner) banner.classList.add('hidden');
+                if (badge) badge.classList.add('hidden');
+                if (addBtn) addBtn.classList.add('hidden');
             }
             renderTimeline();
-        }
-
-        function insertVerticalTodayBanner(container) {
-            const separator = document.createElement('div');
-            separator.className = "ml-12 relative flex items-center justify-between bg-[#1E252D] text-white p-3.5 rounded-xl border-l-4 border-[#FDB813] shadow-md";
-            separator.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-black uppercase tracking-widest text-[#FDB813]">YOU ARE HERE</span>
-                </div>
-                <span class="text-xs font-extrabold px-2.5 py-0.5 bg-slate-800 rounded-md text-[#FDB813] border border-slate-700">
-                    ${formatReadableDate(CURRENT_DATE_STR)}
-                </span>
-            `;
-            container.appendChild(separator);
         }
 
         window.onload = function() {
             loadState(function() {
                 setupROIEventListeners();
             });
-
-            const client = getSupabaseClient();
-
-            if (client && currentProspectId) {
-                client
-                    .channel('evaluations-realtime')
-                    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'evaluations', filter: `id=eq.${currentProspectId}` }, payload => {
-                        const data = payload.new;
-                        state.discoveryDate = data.discovery_date;
-                        state.goLiveDate = data.go_live_date;
-                        state.customMilestones = data.custom_milestones;
-                        state.anchorOverrides = data.anchor_overrides;
-                        state.anchorStatuses = data.anchor_statuses;
-                        state.roi = data.roi;
-                        
-                        ensureStateSafety();
-                        renderTimeline();
-                        fillROIInputsFromState();
-                        calculateROI();
-                    })
-                    .subscribe();
-            }
         };
     </script>
 </body>
